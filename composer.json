@@ -1,0 +1,22 @@
+{
+    "name": "vitexsoftware/abraflexi-revolut",
+    "description": "Revolut transactions importer into AbraFlexi",
+    "type": "project",
+    "require": {
+        "spojenet/flexibee": "dev-main",
+        "vitexsoftware/ease-core": "dev-main"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Vitexsoftware\\AbraflexiRevolut\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "CyberVitexus",
+            "email": "info@vitexsoftware.cz"
+        }
+    ],
+    "minimum-stability": "stable"
+}
