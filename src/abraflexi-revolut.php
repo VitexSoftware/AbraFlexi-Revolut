@@ -7,7 +7,7 @@ $csvFile = $argv[1];
 /**
  * Gives you AbraFlexi Bank 
  * 
- * @param STRING $accountNumber
+ * @param string $accountIban
  * 
  * @return \AbraFlexi\RO
  * 
@@ -46,8 +46,8 @@ foreach ($transactions as $transaction) {
         if (empty($candidates)) {
 
             $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
-            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
-            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
+//            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
+//            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
             $banker->setDataValue('bezPolozek', true);
             $banker->setDataValue('typDokl', \AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_TYPE', 'STAND')));
             $banker->setDataValue('rada', \AbraFlexi\RO::code($numRow));
