@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_install:
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//' `'"' debian/conf/composer.json |sponge debian/conf/composer.json
+	dh_install
+	sed -i -e 's/..\/vendor/\/var\/lib\/composer\/abraflexi-revolut/g' 	             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
+	sed -i -e 's/..\/.env//'                                                             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.mutliflexi.app.json | sponge debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.mutliflexi.app.json

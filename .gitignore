@@ -3,3 +3,9 @@
 /.env
 /*.csv
 
+/debian/.debhelper/
+/debian/abraflexi-revolut/
+/debian/multiflexi-abraflexi-revolut/
+/debian/multiflexi-abraflexi-revolut.substvars
+/debian/multiflexi-abraflexi-revolut.debhelper.log
+/debian/debhelper-build-stamp

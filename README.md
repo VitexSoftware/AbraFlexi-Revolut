@@ -1,5 +1,5 @@
 # AbraFlexi-Revolut
-Import revolout transactions into AbraFlexi
+Import revolut transactions into AbraFlexi
 
 
 Configuration:

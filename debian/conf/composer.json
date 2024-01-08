@@ -1,0 +1,34 @@
+{
+  "name": "deb/abraflexi-revolut",
+  "description": "Revolut transactions importer into AbraFlexi",
+  "type": "project",
+  "version": "0.2.0",
+  "authors": [
+    {
+      "name": "Vítězslav Dvořák",
+      "email": "info@vitexsoftware.cz"
+    }
+  ],
+  "config": {
+    "vendor-dir": "/var/lib/abraflexi-revolut"
+  },
+  "require": {
+    "deb/ease-core": "*",
+    "deb/abraflexi": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Vitexsoftware\\AbraflexiRevolut\\": "./"
+    }
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "/usr/share/php/EaseCore"
+    },
+    {
+      "type": "path",
+      "url": "/usr/share/php/AbraFlexi"
+    }
+  ]
+}

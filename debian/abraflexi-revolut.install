@@ -1,0 +1,6 @@
+debian/conf/composer.json       usr/lib/abraflexi-revolut/
+src/*			        usr/lib/abraflexi-revolut/
+bin/*                           usr/bin/
+abraflexi-revolut.svg           usr/share/icons/hicolor/scalable/apps/
+io.github.vitexsoftware.abraflexi_revolut.desktop usr/share/applications/
+

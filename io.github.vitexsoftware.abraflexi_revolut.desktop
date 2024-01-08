@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=abraflexi-revolut
+Comment=Import revolut transactions into AbraFlexi
+Categories=Office;Finance;
+
+Icon=abraflexi-revolut
+Exec=abraflexi-import-revolut
+Terminal=false

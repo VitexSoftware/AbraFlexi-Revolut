@@ -1,0 +1,24 @@
+Source: abraflexi-revolut
+Build-Depends: debhelper (>= 7.0.50~), jq, moreutils, debhelper-compat (= 11)
+Standards-Version: 4.2.3
+Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
+Uploaders: Vitex <vitex@hippy.cz>
+Priority: optional
+Homepage: https://github.com/VitexSoftware/AbraFlexi-Revolut
+
+Package: abraflexi-revolut
+Depends: ${misc:Depends},  php-spojenet-abraflexi, php-cli
+Suggests: multiflexi-abraflexi-revolut
+Architecture: all
+Section: office
+Priority: optional
+Description: Revolut statements importer into AbraFlexi
+ Revolut CSV statements import into AbraFlexi
+
+Package: multiflexi-abraflexi-revolut
+Depends: abraflexi-revolut, multiflexi
+Architecture: all
+Section: office
+Priority: optional
+Description: Add AbraFlexi contracts to invoice generator to MultiFlexi
+ Easy way how to generate your invoices every day

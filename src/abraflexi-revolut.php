@@ -2,15 +2,15 @@
 
 require_once '../vendor/autoload.php';
 $csvFile = $argv[1];
-\Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], array_key_exists(2, $argv) ? $argv[2] : null );
+\Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], array_key_exists(2, $argv) ? $argv[2] : null);
 
 /**
- * Gives you AbraFlexi Bank 
- * 
+ * Gives you AbraFlexi Bank
+ *
  * @param string $accountIban
- * 
+ *
  * @return \AbraFlexi\RO
- * 
+ *
  * @throws Exception
  */
 function getBank($accountIban)
@@ -27,8 +27,9 @@ function getBank($accountIban)
 $account = getBank(\Ease\Functions::cfg('ACCOUNT_IBAN'));
 $row = 1;
 $transactions = [];
-if (($handle = fopen($csvFile, "r")) !== FALSE) {
-    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+$columns = [];
+if (($handle = fopen($csvFile, "r")) !== false) {
+    while (($data = fgetcsv($handle, 1000, ",")) !== false) {
         if ($row++ == 1) {
             $columns = $data;
             $num = count($data);
@@ -44,7 +45,6 @@ foreach ($transactions as $transaction) {
         $banker = new \AbraFlexi\Banka();
         $candidates = $banker->getColumnsFromAbraFlexi('id', ['cisDosle' => $transaction['Completed Date']]);
         if (empty($candidates)) {
-
             $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
 //            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
 //            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
@@ -61,7 +61,7 @@ foreach ($transactions as $transaction) {
             $banker->setDataValue('mena', \AbraFlexi\RO::code($transaction['Currency']));
             try {
                 $inserted = $banker->insertToAbraFlexi();
-                $banker->addStatusMessage('payment imported: ' . $inserted . ' ' . implode(',', $transaction), 'success');
+                $banker->addStatusMessage('payment imported: ' . strval($inserted) . ' ' . implode(',', $transaction), 'success');
             } catch (\AbraFlexi\Exception $exc) {
                 echo $exc->getTraceAsString();
             }
@@ -85,4 +85,3 @@ foreach ($transactions as $transaction) {
 //)
     }
 }
-

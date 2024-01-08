@@ -1,0 +1,10 @@
+abraflexi-revolut (0.2.0) UNRELEASED; urgency=low
+
+  [ Vítězslav Dvořák ]
+  * Initial release. Closes: #nnnn
+    <nnnn is the bug number of your ITP>
+
+  [ vitex ]
+  * MultiFlexi support added
+
+ -- vitex <info@vitexsoftware.cz>  Mon, 08 Jan 2024 15:06:35 +0100

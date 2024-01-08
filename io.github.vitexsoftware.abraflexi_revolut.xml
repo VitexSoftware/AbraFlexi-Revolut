@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.vitexsoftware.abraflexi_contract_invoices</id>
+  
+  <name>abraflexi-revolut</name>
+  <summary>Trigger AbraFlexi contracts to invoice generator</summary>
+  
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  
+  <description>
+    <p>
+      Import revolut CSV Bank statements into AbraFlexi
+    </p>
+  </description>
+  
+  <launchable type="desktop-id">io.github.vitexsoftware.abraflexi_revolut.desktop</launchable>
+</component>

@@ -59,16 +59,16 @@
         },
         {
             "name": "pear/mail",
-            "version": "v1.5.0",
+            "version": "v1.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pear/Mail.git",
-                "reference": "c31b7635899a630a8ce681e5ced18cededcc15f3"
+                "reference": "4fda3292ac6bf226d8841cfd8ee3cf4e28395c01"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pear/Mail/zipball/c31b7635899a630a8ce681e5ced18cededcc15f3",
-                "reference": "c31b7635899a630a8ce681e5ced18cededcc15f3",
+                "url": "https://api.github.com/repos/pear/Mail/zipball/4fda3292ac6bf226d8841cfd8ee3cf4e28395c01",
+                "reference": "4fda3292ac6bf226d8841cfd8ee3cf4e28395c01",
                 "shasum": ""
             },
             "require": {
@@ -122,7 +122,7 @@
                 "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Mail",
                 "source": "https://github.com/pear/Mail"
             },
-            "time": "2022-11-29T22:04:18+00:00"
+            "time": "2023-11-01T21:31:59+00:00"
         },
         {
             "name": "pear/mail_mime",
@@ -177,21 +177,22 @@
         },
         {
             "name": "pear/pear-core-minimal",
-            "version": "v1.10.13",
+            "version": "v1.10.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pear/pear-core-minimal.git",
-                "reference": "aed862e95fd286c53cc546734868dc38ff4b5b1d"
+                "reference": "a86fc145edb5caedbf96527214ce3cadc9de4a32"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pear/pear-core-minimal/zipball/aed862e95fd286c53cc546734868dc38ff4b5b1d",
-                "reference": "aed862e95fd286c53cc546734868dc38ff4b5b1d",
+                "url": "https://api.github.com/repos/pear/pear-core-minimal/zipball/a86fc145edb5caedbf96527214ce3cadc9de4a32",
+                "reference": "a86fc145edb5caedbf96527214ce3cadc9de4a32",
                 "shasum": ""
             },
             "require": {
                 "pear/console_getopt": "~1.4",
-                "pear/pear_exception": "~1.0"
+                "pear/pear_exception": "~1.0",
+                "php": ">=5.4"
             },
             "replace": {
                 "rsky/pear-core-min": "self.version"
@@ -221,7 +222,7 @@
                 "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=PEAR",
                 "source": "https://github.com/pear/pear-core-minimal"
             },
-            "time": "2023-04-19T19:15:47+00:00"
+            "time": "2023-11-26T16:15:38+00:00"
         },
         {
             "name": "pear/pear_exception",
@@ -288,23 +289,19 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/Spoje-NET/php-abraflexi.git",
-                "reference": "dbee2b5ab378c4a65373aa838d12a6bfead6e7a5"
+                "reference": "a50d2a2a50925fa0e1dbdf366873e6a0d67d7445"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Spoje-NET/php-abraflexi/zipball/dbee2b5ab378c4a65373aa838d12a6bfead6e7a5",
-                "reference": "dbee2b5ab378c4a65373aa838d12a6bfead6e7a5",
+                "url": "https://api.github.com/repos/Spoje-NET/php-abraflexi/zipball/a50d2a2a50925fa0e1dbdf366873e6a0d67d7445",
+                "reference": "a50d2a2a50925fa0e1dbdf366873e6a0d67d7445",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-gettext": "*",
                 "ext-json": "*",
-                "vitexsoftware/ease-core": ">=1.12"
-            },
-            "replace": {
-                "spoje.net/flexibee": "*",
-                "spoje.net/flexipeehp": "*"
+                "vitexsoftware/ease-core": ">=1.41"
             },
             "require-dev": {
                 "ext-iconv": "*",
@@ -328,7 +325,7 @@
                     "email": "info@vitexsoftware.cz"
                 }
             ],
-            "description": "Library for easy interaction with czech economic system FlexiBee.",
+            "description": "Library for easy interaction with czech economic system AbraFlexi.",
             "keywords": [
                 "API-Client",
                 "AbraFlexi",
@@ -339,7 +336,7 @@
                 "issues": "https://github.com/Spoje-NET/php-abraflexi/issues",
                 "source": "https://github.com/Spoje-NET/php-abraflexi/tree/main"
             },
-            "time": "2023-07-11T07:31:44+00:00"
+            "time": "2024-01-01T12:17:14+00:00"
         },
         {
             "name": "vitexsoftware/ease-core",
@@ -347,12 +344,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/VitexSoftware/php-ease-core.git",
-                "reference": "19ae33f7dc32a0d138c9a3b39971dd83d0b3c7fb"
+                "reference": "7866ad434d7f986f2d6d6b2bac4799bbf27419e8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VitexSoftware/php-ease-core/zipball/19ae33f7dc32a0d138c9a3b39971dd83d0b3c7fb",
-                "reference": "19ae33f7dc32a0d138c9a3b39971dd83d0b3c7fb",
+                "url": "https://api.github.com/repos/VitexSoftware/php-ease-core/zipball/7866ad434d7f986f2d6d6b2bac4799bbf27419e8",
+                "reference": "7866ad434d7f986f2d6d6b2bac4799bbf27419e8",
                 "shasum": ""
             },
             "require": {
@@ -401,7 +398,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2023-07-30T13:57:01+00:00"
+            "time": "2024-01-01T11:49:38+00:00"
         }
     ],
     "packages-dev": [],
