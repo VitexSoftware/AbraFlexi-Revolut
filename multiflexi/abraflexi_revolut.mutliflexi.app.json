@@ -8,7 +8,7 @@
     "deploy": "apt install abraflexi-revolut",
     "homepage": "https:\/\/github.com\/VitexSoftware\/AbraFlexi-Revolut",
     "ociimage": "docker.io\/vitexsoftware\/abraflexi-revolut",
-    "requirements": "",
+    "requirements": "AbraFlexi",
     "environment": {
         "ABRAFLEXI_COMPANY": {
             "type": "string",
