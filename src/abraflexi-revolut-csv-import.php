@@ -2,7 +2,7 @@
 
 require_once '../vendor/autoload.php';
 $csvFile = $argv[1];
-\Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], array_key_exists(2, $argv) ? $argv[2] : null);
+\Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
 
 /**
  * Gives you AbraFlexi Bank
