@@ -1,4 +1,4 @@
-abraflexi-revolut (0.2.0) UNRELEASED; urgency=low
+abraflexi-revolut (0.3.0) UNRELEASED; urgency=low
 
   [ Vítězslav Dvořák ]
   * Initial release. Closes: #nnnn
@@ -7,4 +7,7 @@ abraflexi-revolut (0.2.0) UNRELEASED; urgency=low
   [ vitex ]
   * MultiFlexi support added
 
- -- vitex <info@vitexsoftware.cz>  Mon, 08 Jan 2024 15:06:35 +0100
+  [  ]
+  * Foregin Currencies Support
+
+ --  <vitezslav.dvorak@spojenet.cz>  Fri, 12 Jan 2024 13:14:34 +0100
