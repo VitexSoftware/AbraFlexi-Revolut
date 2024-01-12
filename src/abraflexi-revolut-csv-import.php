@@ -1,5 +1,6 @@
 <?php
 
+define('APP_NAME', 'RevolutCSVtoAbraFlexi');
 require_once '../vendor/autoload.php';
 $csvFile = $argv[1];
 \Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
@@ -24,7 +25,13 @@ function getBank($accountIban)
     }
     return $banker;
 }
+
 $account = getBank(\Ease\Functions::cfg('ACCOUNT_IBAN'));
+
+if (\Ease\Shared::cfg('APP_DEBUG', false)) {
+    $account->logBanner();
+}
+
 $row = 1;
 $transactions = [];
 $columns = [];
@@ -55,15 +62,22 @@ foreach ($transactions as $transaction) {
             $banker->setDataValue('typPohybuK', 'typPohybu.prijem');
             $banker->setDataValue('popis', $transaction['Description']);
             $banker->setDataValue('stavUzivK', 'stavUziv.nactenoEl');
-            $banker->setDataValue('sumOsv', $transaction['Amount']);
             $banker->setDataValue('datVyst', \AbraFlexi\RO::dateToFlexiDate(new \DateTime($transaction['Started Date'])));
             $banker->setDataValue('cisDosle', $transaction['Completed Date']);
+
             $banker->setDataValue('mena', \AbraFlexi\RO::code($transaction['Currency']));
+            if ($transaction['Currency'] == 'CZK') {
+                $banker->setDataValue('sumOsv', $transaction['Amount']);
+            } else {
+                $banker->setDataValue('sumOsvMen', $transaction['Amount']);
+            }
+
             try {
-                $inserted = $banker->insertToAbraFlexi();
+                $inserted = $banker->sync();
                 $banker->addStatusMessage('payment imported: ' . strval($inserted) . ' ' . implode(',', $transaction), 'success');
             } catch (\AbraFlexi\Exception $exc) {
                 echo $exc->getTraceAsString();
+                exit(1);
             }
         } else {
             $banker->addStatusMessage('payment already present ' . implode(',', $transaction));

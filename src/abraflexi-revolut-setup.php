@@ -16,7 +16,7 @@ require_once('../vendor/autoload.php');
 \Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
 
 $banker = new \AbraFlexi\RW(null, ['evidence' => 'bankovni-ucet']);
-if (boolval(\Ease\Functions::cfg('APP_DEBUG'))) {
+if (boolval(\Ease\Functions::cfg('APP_DEBUG', false))) {
     $banker->logBanner();
 }
 $currentAccounts = $banker->getColumnsFromAbraFlexi(['id', 'kod', 'nazev', 'iban', 'bic', 'nazBanky', 'poznam'], ['limit' => 0], 'iban');
@@ -38,4 +38,6 @@ if (array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
         sprintf('Account %s registered in flexibee as %s', 'Revolut', $banker->getRecordCode()),
         ($saved ? 'success' : 'error')
     );
+
+//TODO: Create Bank NumRow REVO+ & REVO-
 }

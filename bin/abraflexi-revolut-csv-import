@@ -1,2 +1,3 @@
 #!/bin/bash
-php -f /usr/lib/abraflexi-revolut/abraflexi-revolut-csv-import.php
+php -f /usr/lib/abraflexi-revolut/abraflexi-revolut-csv-import.php $@
+
