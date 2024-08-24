@@ -51,11 +51,12 @@ if ($csvFile) {
         fclose($handle);
     }
 
+    $banker = new \AbraFlexi\Banka();
     foreach ($transactions as $transaction) {
-        if ($transaction['Type'] == 'TOPUP') {
-            $banker = new \AbraFlexi\Banka();
-            $candidates = $banker->getColumnsFromAbraFlexi('id', ['cisDosle' => $transaction['Completed Date']]);
+        if (($transaction['Type'] == 'TOPUP') && ($transaction['State'] == 'COMPLETED')) {
+            $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod'], ['cisDosle' => $transaction['Completed Date']]);
             if (empty($candidates)) {
+                $banker->dataReset();
                 $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
                 //            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
                 //            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
@@ -78,15 +79,15 @@ if ($csvFile) {
 
                 try {
                     $inserted = $banker->sync();
-                    $banker->addStatusMessage('payment imported: ' . strval($inserted) . ' ' . implode(',', $transaction), 'success');
+                    $banker->addStatusMessage(sprintf(_('payment %s imported: %s'), $banker->getRecordIdent(), strval($inserted) . ' ' . implode(',', $transaction)), 'success');
                 } catch (\AbraFlexi\Exception $exc) {
                     echo $exc->getTraceAsString();
                     exit(1);
                 }
             } else {
-                $banker->addStatusMessage('payment already present ' . implode(',', $transaction));
+                $banker->setData($candidates[0]);
+                $banker->addStatusMessage(sprintf(_('payment %s already present: %s'), $banker->getRecordIdent(), implode(',', $transaction)));
             }
-
 
             //Array
             //(
