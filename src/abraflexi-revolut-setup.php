@@ -27,11 +27,11 @@ if (array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
     $banker->dataReset();
     $banker->setDataValue('kod', 'REVOLUT');
     $banker->setDataValue('nazev', 'Revolut');
-//    $banker->setDataValue('buc', $account->accountNumber);
+    //    $banker->setDataValue('buc', $account->accountNumber);
     $banker->setDataValue('nazBanky', 'Revolut Bank UAB');
     $banker->setDataValue('popis', 'Revolut, Ltd.');
     $banker->setDataValue('iban', \Ease\Shared::cfg('ACCOUNT_IBAN'));
-//    $banker->setDataValue('smerKod', \AbraFlexi\RO::code($account->bankCode));
+    //    $banker->setDataValue('smerKod', \AbraFlexi\RO::code($account->bankCode));
     $banker->setDataValue('bic', 'REVOLT21');
     $saved = $banker->sync();
     $banker->addStatusMessage(
@@ -39,5 +39,5 @@ if (array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
         ($saved ? 'success' : 'error')
     );
 
-//TODO: Create Bank NumRow REVO+ & REVO-
+    //TODO: Create Bank NumRow REVO+ & REVO-
 }

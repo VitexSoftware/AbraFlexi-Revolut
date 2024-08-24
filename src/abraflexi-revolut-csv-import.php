@@ -53,8 +53,8 @@ foreach ($transactions as $transaction) {
         $candidates = $banker->getColumnsFromAbraFlexi('id', ['cisDosle' => $transaction['Completed Date']]);
         if (empty($candidates)) {
             $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
-//            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
-//            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
+            //            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
+            //            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
             $banker->setDataValue('bezPolozek', true);
             $banker->setDataValue('typDokl', \AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_TYPE', 'STAND')));
             $banker->setDataValue('rada', \AbraFlexi\RO::code($numRow));
@@ -84,18 +84,18 @@ foreach ($transactions as $transaction) {
         }
 
 
-//Array
-//(
-//    [Type] => TOPUP
-//    [Product] => Current
-//    [Started Date] => 2023-02-27 13:17:32
-//    [Completed Date] => 2023-02-27 13:17:32
-//    [Description] => Payment from Gh-networks, S.r.o.
-//    [Amount] => 14857.50
-//    [Fee] => 0.00
-//    [Currency] => CZK
-//    [State] => COMPLETED
-//    [Balance] => 18811.29
-//)
+        //Array
+        //(
+        //    [Type] => TOPUP
+        //    [Product] => Current
+        //    [Started Date] => 2023-02-27 13:17:32
+        //    [Completed Date] => 2023-02-27 13:17:32
+        //    [Description] => Payment from Gh-networks, S.r.o.
+        //    [Amount] => 14857.50
+        //    [Fee] => 0.00
+        //    [Currency] => CZK
+        //    [State] => COMPLETED
+        //    [Balance] => 18811.29
+        //)
     }
 }

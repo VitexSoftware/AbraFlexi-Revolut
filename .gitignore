@@ -10,3 +10,4 @@
 /debian/multiflexi-abraflexi-revolut.debhelper.log
 /debian/debhelper-build-stamp
 /abraflexi-revolut-social-preview.png
+/.php-cs-fixer.cache
