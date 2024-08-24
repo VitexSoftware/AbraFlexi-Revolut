@@ -8,6 +8,8 @@
     "deploy": "apt install abraflexi-revolut",
     "homepage": "https:\/\/github.com\/VitexSoftware\/AbraFlexi-Revolut",
     "ociimage": "docker.io\/vitexsoftware\/abraflexi-revolut",
+    "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
+    "topics": "Revolut, Statement, Importer",
     "requirements": "AbraFlexi",
     "environment": {
         "ABRAFLEXI_COMPANY": {
