@@ -11,3 +11,6 @@
 /debian/debhelper-build-stamp
 /abraflexi-revolut-social-preview.png
 /.php-cs-fixer.cache
+/debian/abraflexi-revolut.debhelper.log
+/debian/abraflexi-revolut.substvars
+/debian/files

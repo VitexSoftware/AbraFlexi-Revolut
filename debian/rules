@@ -8,4 +8,4 @@ override_dh_install:
 	dh_install
 	sed -i -e 's/..\/vendor/\/var\/lib\/composer\/abraflexi-revolut/g' 	             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
 	sed -i -e 's/..\/.env//'                                                             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
-	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.mutliflexi.app.json | sponge debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.mutliflexi.app.json
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.multiflexi.app.json | sponge debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.multiflexi.app.json
