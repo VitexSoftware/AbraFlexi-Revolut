@@ -42,9 +42,6 @@ sudo apt update
 sudo apt install abraflexi-revolut
 ```
 
-
-
-
 MultiFlexi
 ----------
 
