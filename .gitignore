@@ -14,3 +14,4 @@
 /debian/abraflexi-revolut.debhelper.log
 /debian/abraflexi-revolut.substvars
 /debian/files
+/.build/
