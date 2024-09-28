@@ -6,6 +6,13 @@
         "spojenet/flexibee": "dev-main",
         "vitexsoftware/ease-core": "dev-main"
     },
+    "require-dev": {
+        "phpunit/phpunit": "*",
+        "phpstan/phpstan": "*",
+        "friendsofphp/php-cs-fixer": "^3.61",
+        "ergebnis/composer-normalize": "^2.43",
+        "ergebnis/php-cs-fixer-config": "^6.34"
+    },
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -18,5 +25,10 @@
             "email": "info@vitexsoftware.cz"
         }
     ],
-    "minimum-stability": "stable"
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "ergebnis/composer-normalize": true
+        }
+    }
 }

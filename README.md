@@ -1,4 +1,4 @@
-# AbraFlexi-Revolut
+# Revolut for AbraFlexi
 Import revolut transactions into AbraFlexi
 
 ![Logo](abraflexi-revolut-social-preview.svg?raw=true)

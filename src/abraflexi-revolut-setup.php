@@ -1,27 +1,35 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- * AbraFlexi Revolut - Inital setup.
+ * This file is part of the Revolut4AbraFlexi package
  *
- * @author     Vítězslav Dvořák <info@vitexsoftware.com>
- * @copyright  (C) 2024 Spoje.Net
+ * https://github.com/VitexSoftware/AbraFlexi-Revolut
+ *
+ * (c) Vítězslav Dvořák <http://vitexsoftware.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace AbraFlexi\RaiffeisenBank;
 
-require_once('../vendor/autoload.php');
+require_once '../vendor/autoload.php';
 /**
- * Get List of bank accounts and import it into AbraFlexi
+ * Get List of bank accounts and import it into AbraFlexi.
  */
 \Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
 
 $banker = new \AbraFlexi\RW(null, ['evidence' => 'bankovni-ucet']);
-if (boolval(\Ease\Functions::cfg('APP_DEBUG', false))) {
+
+if ((bool) \Ease\Functions::cfg('APP_DEBUG', false)) {
     $banker->logBanner();
 }
+
 $currentAccounts = $banker->getColumnsFromAbraFlexi(['id', 'kod', 'nazev', 'iban', 'bic', 'nazBanky', 'poznam'], ['limit' => 0], 'iban');
 
-if (array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
+if (\array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
     $banker->addStatusMessage(sprintf('Account %s already exists in flexibee as %s', \Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts[\Ease\Shared::cfg('ACCOUNT_IBAN')]['kod']));
 } else {
     $banker->dataReset();
@@ -36,8 +44,8 @@ if (array_key_exists(\Ease\Shared::cfg('ACCOUNT_IBAN'), $currentAccounts)) {
     $saved = $banker->sync();
     $banker->addStatusMessage(
         sprintf('Account %s registered in flexibee as %s', 'Revolut', $banker->getRecordCode()),
-        ($saved ? 'success' : 'error')
+        $saved ? 'success' : 'error',
     );
 
-    //TODO: Create Bank NumRow REVO+ & REVO-
+    // TODO: Create Bank NumRow REVO+ & REVO-
 }
