@@ -23,7 +23,7 @@ require_once '../vendor/autoload.php';
 
 $banker = new \AbraFlexi\RW(null, ['evidence' => 'bankovni-ucet']);
 
-if ((bool) \Ease\Functions::cfg('APP_DEBUG', false)) {
+if ((bool) \Ease\Shared::cfg('APP_DEBUG', false)) {
     $banker->logBanner();
 }
 

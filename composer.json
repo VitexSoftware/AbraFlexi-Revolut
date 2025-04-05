@@ -3,8 +3,8 @@
     "description": "Revolut transactions importer into AbraFlexi",
     "type": "project",
     "require": {
-        "spojenet/flexibee": "dev-main",
-        "vitexsoftware/ease-core": "dev-main"
+        "spojenet/flexibee": "^3.4",
+        "vitexsoftware/ease-core": "^1.47"
     },
     "require-dev": {
         "phpunit/phpunit": "*",

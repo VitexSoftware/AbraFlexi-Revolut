@@ -12,13 +12,21 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+use \Ease\Shared;
 
 \define('APP_NAME', 'RevolutCSVtoAbraFlexi');
 
 require_once '../vendor/autoload.php';
 
-\Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
-$csvFile = \array_key_exists(1, $argv) ? $argv[1] : \Ease\Shared::cfg('REVOLUT_CSV');
+$options = getopt('i::e::o::', ['input::environment::output::']);
+
+\Ease\Shared::init(
+    ['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'],
+    \array_key_exists('environment', $options) ? $options['environment'] : (\array_key_exists('e', $options) ? $options['e'] : '../.env'),
+);
+
+$csvFile = \array_key_exists('i', $options) ? $options['i'] : (\array_key_exists('input', $options) ? $options['input'] : Shared::cfg('REVOLUT_CSV', 'php://stdin'));
+$destination = \array_key_exists('o', $options) ? $options['o'] : (\array_key_exists('output', $options) ? $options['output'] : Shared::cfg('RESULT_FILE', 'php://stdout'));
 
 /**
  * Gives you AbraFlexi Bank.
@@ -43,7 +51,7 @@ function getBank($accountIban)
     return $banker;
 }
 
-$account = getBank(\Ease\Functions::cfg('ACCOUNT_IBAN'));
+$account = getBank(\Ease\Shared::cfg('ACCOUNT_IBAN'));
 
 if (\Ease\Shared::cfg('APP_DEBUG', false)) {
     $account->logBanner();
@@ -55,7 +63,7 @@ if ($csvFile) {
     $columns = [];
 
     if (($handle = fopen($csvFile, 'rb')) !== false) {
-        while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+        while (($data = fgetcsv($handle, 1000, ',', '"', '\\')) !== false) { // Added the escape parameter '\\'
             if ($row++ === 1) {
                 $columns = $data;
                 $num = \count($data);
@@ -77,12 +85,12 @@ if ($csvFile) {
 
             if (empty($candidates)) {
                 $banker->dataReset();
-                $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
+                $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
                 //            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
                 //            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
                 $banker->setDataValue('bezPolozek', true);
-                $banker->setDataValue('typDokl', \AbraFlexi\RO::code(\Ease\Functions::cfg('DOCUMENT_TYPE', 'STAND')));
-                $banker->setDataValue('rada', \AbraFlexi\RO::code($numRow));
+                $banker->setDataValue('typDokl', \AbraFlexi\RO::code(\Ease\Shared::cfg('DOCUMENT_TYPE', 'STAND')));
+                $banker->setDataValue('rada', \AbraFlexi\RO::code((string)$numRow));
                 $banker->setDataValue('banka', $account);
                 $banker->setDataValue('typPohybuK', 'typPohybu.prijem');
                 $banker->setDataValue('popis', $transaction['Description']);
