@@ -1,8 +1,14 @@
-abraflexi-revolut (0.5.0) UNRELEASED; urgency=medium
+abraflexi-revolut (0.5.1) UNRELEASED; urgency=medium
+
+  * CARD_REFUND support
+
+ -- vitex <info@vitexsoftware.cz>  Tue, 29 Apr 2025 22:27:41 +0200
+
+abraflexi-revolut (0.5.0) unstable; urgency=medium
 
   * Import improvements
 
- -- vitex <info@vitexsoftware.cz>  Tue, 29 Apr 2025 21:05:01 +0200
+ -- vitex <info@vitexsoftware.cz>  Tue, 29 Apr 2025 22:27:28 +0200
 
 abraflexi-revolut (0.4.0) unstable; urgency=medium
 
