@@ -119,9 +119,13 @@ if ($csvFile) {
                             $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
                         }
                         break;
+                    case 'CARD_REFUND':
+                        $report['skipped']++;
+                        continue 2;
+                        break;
                     default:
                         $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $transaction['Type']), 'warning');
-                        $report['skipped']++;
+                        $report['error']++;
                         continue 2;
                 }
 
