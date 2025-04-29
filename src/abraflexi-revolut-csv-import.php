@@ -12,7 +12,8 @@ declare(strict_types=1);
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
-use \Ease\Shared;
+
+use Ease\Shared;
 
 \define('APP_NAME', 'RevolutCSVtoAbraFlexi');
 
@@ -20,13 +21,22 @@ require_once '../vendor/autoload.php';
 
 $options = getopt('i::e::o::', ['input::environment::output::']);
 
-\Ease\Shared::init(
+Shared::init(
     ['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'],
     \array_key_exists('environment', $options) ? $options['environment'] : (\array_key_exists('e', $options) ? $options['e'] : '../.env'),
 );
-
 $csvFile = \array_key_exists('i', $options) ? $options['i'] : (\array_key_exists('input', $options) ? $options['input'] : Shared::cfg('REVOLUT_CSV', 'php://stdin'));
 $destination = \array_key_exists('o', $options) ? $options['o'] : (\array_key_exists('output', $options) ? $options['output'] : Shared::cfg('RESULT_FILE', 'php://stdout'));
+
+$exitcode = 0;
+$report = [
+    'input' => $csvFile,
+    'account' => Shared::cfg('ACCOUNT_IBAN'),
+    'imported' => 0, // Počet úspěšně importovaných transakcí
+    'skipped' => 0,  // Počet přeskočených transakcí
+    'errors' => [],  // Pole pro ukládání chyb
+    'exitcode' => 0,
+];
 
 /**
  * Gives you AbraFlexi Bank.
@@ -51,9 +61,9 @@ function getBank($accountIban)
     return $banker;
 }
 
-$account = getBank(\Ease\Shared::cfg('ACCOUNT_IBAN'));
+$account = getBank(Shared::cfg('ACCOUNT_IBAN'));
 
-if (\Ease\Shared::cfg('APP_DEBUG', false)) {
+if (Shared::cfg('APP_DEBUG', false)) {
     $account->logBanner();
 }
 
@@ -78,27 +88,48 @@ if ($csvFile) {
     }
 
     $banker = new \AbraFlexi\Banka();
+    $banker->addStatusMessage(sprintf(_('Importing %d transactions from %s file'), count($transactions), $csvFile));
 
     foreach ($transactions as $transaction) {
-        if (($transaction['Type'] === 'TOPUP') && ($transaction['State'] === 'COMPLETED')) {
+        if (($transaction['State'] === 'COMPLETED')) {
             $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod'], ['cisDosle' => $transaction['Completed Date']]);
 
             if (empty($candidates)) {
                 $banker->dataReset();
-                $numRow = new \AbraFlexi\RO(\AbraFlexi\RO::code(\Ease\Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
-                //            $id = $numRow->getDataValue('polozkyRady')[0]['preview'];
-                //            $banker->setDataValue('kod', $id); // str_replace([' ', ':', '-'], '', $transaction['Completed Date'])
+                $numRow = new \AbraFlexi\RO(\AbraFlexi\Functions::code(Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
                 $banker->setDataValue('bezPolozek', true);
-                $banker->setDataValue('typDokl', \AbraFlexi\RO::code(\Ease\Shared::cfg('DOCUMENT_TYPE', 'STAND')));
-                $banker->setDataValue('rada', \AbraFlexi\RO::code((string)$numRow));
+                $banker->setDataValue('typDokl', \AbraFlexi\Functions::code(Shared::cfg('DOCUMENT_TYPE', 'STAND')));
+                $banker->setDataValue('rada', \AbraFlexi\Functions::code((string) $numRow));
                 $banker->setDataValue('banka', $account);
-                $banker->setDataValue('typPohybuK', 'typPohybu.prijem');
+
+                // Nastavení typu pohybu podle typu transakce
+
+                switch ($transaction['Type']) {
+                    case 'TOPUP':
+                        $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
+                        break;
+                    case 'FEE':
+                    case 'CARD_PAYMENT':
+                        $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
+                        break;
+                    case 'TRANSFER':
+                        if ($transaction['Amount'] < 0) {
+                            $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
+                        } else {
+                            $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
+                        }
+                        break;
+                    default:
+                        $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $transaction['Type']), 'warning');
+                        $report['skipped']++;
+                        continue 2;
+                }
+
                 $banker->setDataValue('popis', $transaction['Description']);
                 $banker->setDataValue('stavUzivK', 'stavUziv.nactenoEl');
-                $banker->setDataValue('datVyst', \AbraFlexi\RO::dateToFlexiDate(new \DateTime($transaction['Started Date'])));
+                $banker->setDataValue('datVyst', \AbraFlexi\Functions::dateToFlexiDate(new \DateTime($transaction['Started Date'])));
                 $banker->setDataValue('cisDosle', $transaction['Completed Date']);
-
-                $banker->setDataValue('mena', \AbraFlexi\RO::code($transaction['Currency']));
+                $banker->setDataValue('mena', \AbraFlexi\Functions::code($transaction['Currency']));
 
                 if ($transaction['Currency'] === 'CZK') {
                     $banker->setDataValue('sumOsv', $transaction['Amount']);
@@ -109,31 +140,31 @@ if ($csvFile) {
                 try {
                     $inserted = $banker->sync();
                     $banker->addStatusMessage(sprintf(_('payment %s imported: %s'), $banker->getRecordIdent(), (string) $inserted.' '.implode(',', $transaction)), 'success');
+                    $report['imported']++;
                 } catch (\AbraFlexi\Exception $exc) {
-                    echo $exc->getTraceAsString();
-
-                    exit(1);
+                    $report['errors'][] = [
+                        'transaction' => $transaction,
+                        'error' => $exc->getMessage(),
+                    ];
+                    $report['exitcode'] = 1;
                 }
             } else {
                 $banker->setData($candidates[0]);
                 $banker->addStatusMessage(sprintf(_('payment %s already present: %s'), $banker->getRecordIdent(), implode(',', $transaction)));
+                $report['skipped']++;
             }
-
-            // Array
-            // (
-            //    [Type] => TOPUP
-            //    [Product] => Current
-            //    [Started Date] => 2023-02-27 13:17:32
-            //    [Completed Date] => 2023-02-27 13:17:32
-            //    [Description] => Payment from Gh-networks, S.r.o.
-            //    [Amount] => 14857.50
-            //    [Fee] => 0.00
-            //    [Currency] => CZK
-            //    [State] => COMPLETED
-            //    [Balance] => 18811.29
-            // )
+        } else {
+            $report['skipped']++;
         }
     }
 } else {
     $account->addStatusMessage(_('CSV File was not provided'), 'error');
 }
+
+$banker->addStatusMessage('import done', 'debug');
+
+$report['exitcode'] = $exitcode;
+$written = file_put_contents($destination, json_encode($report, Shared::cfg('DEBUG') ? \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE : 0));
+$banker->addStatusMessage(sprintf(_('Saving result to %s'), $destination), $written ? 'success' : 'error');
+
+exit($exitcode);
