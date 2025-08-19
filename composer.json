@@ -4,7 +4,7 @@
     "type": "project",
     "require": {
         "spojenet/flexibee": "^3.6",
-        "vitexsoftware/ease-core": "^1.48"
+        "vitexsoftware/ease-core": "^1.49"
     },
     "require-dev": {
         "phpunit/phpunit": "*",
