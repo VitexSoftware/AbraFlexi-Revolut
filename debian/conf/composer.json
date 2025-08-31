@@ -2,7 +2,7 @@
   "name": "deb/abraflexi-revolut",
   "description": "Revolut transactions importer into AbraFlexi",
   "type": "project",
-  "version": "0.3.0",
+  "version": "0.5.1",
   "authors": [
     {
       "name": "Vítězslav Dvořák",

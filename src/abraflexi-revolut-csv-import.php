@@ -33,8 +33,8 @@ $report = [
     'input' => $csvFile,
     'account' => Shared::cfg('ACCOUNT_IBAN'),
     'imported' => 0, // Počet úspěšně importovaných transakcí
-    'skipped' => 0,  // Počet přeskočených transakcí
-    'errors' => [],  // Pole pro ukládání chyb
+    'skipped' => 0, // Počet přeskočených transakcí
+    'errors' => [], // Pole pro ukládání chyb
     'exitcode' => 0,
 ];
 
@@ -88,63 +88,83 @@ if ($csvFile) {
     }
 
     $banker = new \AbraFlexi\Banka();
-    $banker->addStatusMessage(sprintf(_('Importing %d transactions from %s file'), count($transactions), $csvFile));
+    $banker->addStatusMessage(sprintf(_('Importing %d transactions from %s file'), \count($transactions), $csvFile));
 
     foreach ($transactions as $transaction) {
-        if (($transaction['State'] === 'COMPLETED')) {
-            $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod'], ['cisDosle' => $transaction['Completed Date']]);
+        if (($transaction['State'] === 'COMPLETED') || ($transaction['State'] === 'DOKONČENO')) {
+            $type = \array_key_exists('Type', $transaction) ? $transaction['Type'] : $transaction['Typ'];
+            $completed = \array_key_exists('Completed Date', $transaction) ? $transaction['Completed Date'] : $transaction['Datum dokončení'];
+            $started = \array_key_exists('Started Date', $transaction) ? $transaction['Started Date'] : $transaction['Datum zahájení'];
+            $amount = \array_key_exists('Amount', $transaction) ? $transaction['Amount'] : $transaction['Částka'];
+            $currency = \array_key_exists('Currency', $transaction) ? $transaction['Currency'] : $transaction['Měna'];
+            $desc = \array_key_exists('Description', $transaction) ? $transaction['Description'] : $transaction['Popis'];
+
+            $transNumber = $completed;
+            $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod'], ['cisDosle' => $transNumber]);
 
             if (empty($candidates)) {
                 $banker->dataReset();
-                $numRow = new \AbraFlexi\RO(\AbraFlexi\Functions::code(Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
+                $numRow = new \AbraFlexi\RO(\AbraFlexi\Code::ensure(Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
                 $banker->setDataValue('bezPolozek', true);
-                $banker->setDataValue('typDokl', \AbraFlexi\Functions::code(Shared::cfg('DOCUMENT_TYPE', 'STAND')));
-                $banker->setDataValue('rada', \AbraFlexi\Functions::code((string) $numRow));
+                $banker->setDataValue('typDokl', \AbraFlexi\Code::ensure(Shared::cfg('DOCUMENT_TYPE', 'STAND')));
+                $banker->setDataValue('rada', \AbraFlexi\Code::ensure((string) $numRow));
                 $banker->setDataValue('banka', $account);
 
                 // Nastavení typu pohybu podle typu transakce
-
-                switch ($transaction['Type']) {
+                switch ($type) {
                     case 'TOPUP':
+                    case 'Dobíjení':    
                         $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
+
                         break;
                     case 'FEE':
                     case 'CARD_PAYMENT':
+                    case 'Platba kartou':
                         $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
+
                         break;
                     case 'TRANSFER':
-                        if ($transaction['Amount'] < 0) {
+                    case 'Převod':
+                        if ($amount < 0) {
                             $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
                         } else {
                             $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
                         }
+
                         break;
                     case 'CARD_REFUND':
                         $report['skipped']++;
+
                         continue 2;
+
                         break;
+
                     default:
-                        $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $transaction['Type']), 'warning');
-                        $report['error']++;
+                        $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $type), 'warning');
+                        ++$report['error'];
+
                         continue 2;
                 }
 
-                $banker->setDataValue('popis', $transaction['Description']);
-                $banker->setDataValue('stavUzivK', 'stavUziv.nactenoEl');
-                $banker->setDataValue('datVyst', \AbraFlexi\Functions::dateToFlexiDate(new \DateTime($transaction['Started Date'])));
-                $banker->setDataValue('cisDosle', $transaction['Completed Date']);
-                $banker->setDataValue('mena', \AbraFlexi\Functions::code($transaction['Currency']));
 
-                if ($transaction['Currency'] === 'CZK') {
-                    $banker->setDataValue('sumOsv', $transaction['Amount']);
+                $banker->setDataValue('popis', $desc);
+
+                $banker->setDataValue('stavUzivK', 'stavUziv.nactenoEl');
+                $banker->setDataValue('datVyst', \AbraFlexi\Date::fromDateTime(new \DateTime($started)));
+                $banker->setDataValue('cisDosle', $completed);
+
+                $banker->setDataValue('mena', \AbraFlexi\Code::ensure($currency));
+
+                if ($currency === 'CZK') {
+                    $banker->setDataValue('sumOsv', $amount);
                 } else {
-                    $banker->setDataValue('sumOsvMen', $transaction['Amount']);
+                    $banker->setDataValue('sumOsvMen', $amount);
                 }
 
                 try {
                     $inserted = $banker->sync();
                     $banker->addStatusMessage(sprintf(_('payment %s imported: %s'), $banker->getRecordIdent(), (string) $inserted.' '.implode(',', $transaction)), 'success');
-                    $report['imported']++;
+                    ++$report['imported'];
                 } catch (\AbraFlexi\Exception $exc) {
                     $report['errors'][] = [
                         'transaction' => $transaction,
@@ -155,10 +175,10 @@ if ($csvFile) {
             } else {
                 $banker->setData($candidates[0]);
                 $banker->addStatusMessage(sprintf(_('payment %s already present: %s'), $banker->getRecordIdent(), implode(',', $transaction)));
-                $report['skipped']++;
+                ++$report['skipped'];
             }
         } else {
-            $report['skipped']++;
+            ++$report['skipped'];
         }
     }
 } else {
