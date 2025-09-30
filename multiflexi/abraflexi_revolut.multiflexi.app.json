@@ -1,7 +1,7 @@
 {
     "image": "",
     "name": "AbraFlexi Revolut statements import",
-    "description": "Import Revolut bank statemetnts into AbraFlexi",
+    "description": "Import Revolut bank statements into AbraFlexi",
     "executable": "abraflexi-revolut-csv-import",
     "setup": "abraflexi-revolut-setup",
     "cmdparams": "{REVOLUT_CSV}",
@@ -13,7 +13,7 @@
     "requirements": ["AbraFlexi"],
     "environment": {
         "APP_DEBUG": {
-            "type": "boolean",
+            "type": "bool",
             "description": "Enable debug mode",
             "defval": false,
             "required": false
@@ -26,7 +26,7 @@
         },
         "ABRAFLEXI_COMPANY": {
             "type": "string",
-            "description": "",
+            "description": "AbraFlexi Company code/database name",
             "defval": "demo_de",
             "required": true
         },
@@ -55,13 +55,13 @@
             "required": true
         },
         "REVOLUT_CSV": {
-            "type": "file",
+            "type": "file-path",
             "description": "Excel statements csv file",
             "defval": "",
             "required": true
         },
         "RESULT_FILE": {
-            "type": "file",
+            "type": "file-path",
             "description": "Result report file",
             "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
             "required": false
