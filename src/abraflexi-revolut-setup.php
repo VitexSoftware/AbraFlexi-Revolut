@@ -21,7 +21,7 @@ require_once '../vendor/autoload.php';
  */
 \Ease\Shared::init(['ABRAFLEXI_URL', 'ABRAFLEXI_LOGIN', 'ABRAFLEXI_PASSWORD', 'ABRAFLEXI_COMPANY', 'ACCOUNT_IBAN'], '../.env');
 
-$banker = new \AbraFlexi\RW(null, ['evidence' => 'bankovni-ucet']);
+$banker = new \AbraFlexi\BankovniUcet();
 
 if ((bool) \Ease\Shared::cfg('APP_DEBUG', false)) {
     $banker->logBanner();

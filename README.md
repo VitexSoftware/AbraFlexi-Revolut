@@ -198,3 +198,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Issues**: https://github.com/VitexSoftware/AbraFlexi-Revolut/issues
 - **Author**: VítězslaV Dvořák <info@vitexsoftware.cz>
 - **Company**: [VitexSoftware](https://vitexsoftware.com)
+
+## Exit Codes
+
+This application uses the following exit codes:
+
+- `0`: Success
+- `1`: General error

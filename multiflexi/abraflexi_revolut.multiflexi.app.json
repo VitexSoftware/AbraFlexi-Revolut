@@ -1,6 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/VitexSoftware/php-vitexsoftware-multiflexi-core/refs/heads/main/multiflexi.app.schema.json",
-    "schemaVersion": "3.0.0",
+    "schemaVersion": "3.1.0",
     "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
     "name": {
         "en": "AbraFlexi Revolut statements import",
@@ -109,6 +109,24 @@
             "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
             "required": false,
             "category": "Other"
+        }
+    },
+    "exitCodes": {
+        "0": {
+            "description": {
+                "en": "Success",
+                "cs": "Úspěch"
+            },
+            "severity": "success",
+            "retry": false
+        },
+        "1": {
+            "description": {
+                "en": "General error",
+                "cs": "Obecná chyba"
+            },
+            "severity": "error",
+            "retry": true
         }
     }
 }
