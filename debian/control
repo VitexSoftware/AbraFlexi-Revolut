@@ -16,7 +16,7 @@ Description: Revolut statements importer into AbraFlexi
  Revolut CSV statements import into AbraFlexi
 
 Package: multiflexi-abraflexi-revolut
-Depends: abraflexi-revolut, multiflexi
+Depends: abraflexi-revolut, multiflexi-cli
 Architecture: all
 Section: office
 Priority: optional
