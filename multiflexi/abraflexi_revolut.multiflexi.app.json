@@ -1,5 +1,6 @@
 {
     "$schema": "https://raw.githubusercontent.com/VitexSoftware/php-vitexsoftware-multiflexi-core/refs/heads/main/multiflexi.app.schema.json",
+    "version": "0.1.0",
     "schemaVersion": "3.1.0",
     "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
     "name": {
@@ -24,7 +25,7 @@
             "type": "bool",
             "description": {
                 "en": "Enable debug mode",
-                "cs": "Enable debug mode"
+                "cs": "Povolit režim ladění"
             },
             "defval": false,
             "required": false,
@@ -34,7 +35,7 @@
             "type": "string",
             "description": {
                 "en": "Logging method",
-                "cs": "Logging method"
+                "cs": "Metoda protokolování"
             },
             "defval": "syslog|console",
             "required": false,
@@ -44,7 +45,7 @@
             "type": "string",
             "description": {
                 "en": "AbraFlexi Company code/database name",
-                "cs": "AbraFlexi Company code/database name"
+                "cs": "AbraFlexi Kód společnosti/název databáze"
             },
             "defval": "demo_de",
             "required": true,
@@ -54,7 +55,7 @@
             "type": "string",
             "description": {
                 "en": "AbraFlexi Login",
-                "cs": "AbraFlexi Login"
+                "cs": "Přihlašovací jméno AbraFlexi"
             },
             "defval": "winstrom",
             "required": true,
@@ -64,7 +65,7 @@
             "type": "password",
             "description": {
                 "en": "AbraFlexi password",
-                "cs": "AbraFlexi password"
+                "cs": "Heslo AbraFlexi"
             },
             "defval": "winstrom",
             "required": true,
@@ -94,7 +95,7 @@
             "type": "file-path",
             "description": {
                 "en": "Excel statements csv file",
-                "cs": "Excel statements csv file"
+                "cs": "Soubor výpisu z Excelu ve formátu csv"
             },
             "defval": "",
             "required": true,
@@ -104,7 +105,7 @@
             "type": "file-path",
             "description": {
                 "en": "Result report file",
-                "cs": "Result report file"
+                "cs": "Soubor s výslednou zprávou"
             },
             "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
             "required": false,

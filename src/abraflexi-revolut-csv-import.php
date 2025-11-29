@@ -113,7 +113,8 @@ if ($csvFile) {
                 // Nastavení typu pohybu podle typu transakce
                 switch ($type) {
                     case 'TOPUP':
-                    case 'Dobíjení':    
+                    case 'REVERTED':
+                    case 'Dobíjení':
                         $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
 
                         break;
