@@ -1,133 +1,133 @@
 {
-    "$schema": "https://raw.githubusercontent.com/VitexSoftware/php-vitexsoftware-multiflexi-core/refs/heads/main/multiflexi.app.schema.json",
-    "version": "0.1.0",
-    "schemaVersion": "3.1.0",
-    "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
-    "name": {
-        "en": "AbraFlexi Revolut statements import",
-        "cs": "AbraFlexi Revolut statements import"
+  "$schema": "https://raw.githubusercontent.com/VitexSoftware/php-vitexsoftware-multiflexi-core/refs/heads/main/multiflexi.app.schema.json",
+  "version": "0.1.0",
+  "schemaVersion": "3.2.1",
+  "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
+  "name": {
+    "en": "AbraFlexi Revolut statements import",
+    "cs": "AbraFlexi Import výpisů z Revolutu"
+  },
+  "description": {
+    "en": "Import Revolut bank statements into AbraFlexi",
+    "cs": "Import Revolut bankovních výpisů do AbraFlexi"
+  },
+  "tags": [
+    "Revolut",
+    "Statement",
+    "Importer"
+  ],
+  "homepage": "https://github.com/VitexSoftware/AbraFlexi-Revolut",
+  "image": "",
+  "ociimage": "docker.io/vitexsoftware/abraflexi-revolut",
+  "executable": "abraflexi-revolut-csv-import",
+  "environment": {
+    "APP_DEBUG": {
+      "type": "bool",
+      "description": {
+        "en": "Enable debug mode",
+        "cs": "Povolit režim ladění"
+      },
+      "defval": false,
+      "required": false,
+      "category": "Behavior"
     },
-    "description": {
-        "en": "Import Revolut bank statements into AbraFlexi",
-        "cs": "Import Revolut bank statements into AbraFlexi"
+    "EASE_LOGGER": {
+      "type": "string",
+      "description": {
+        "en": "Logging method",
+        "cs": "Metoda protokolování"
+      },
+      "defval": "syslog|console",
+      "required": false,
+      "category": "Behavior"
     },
-    "tags": [
-        "Revolut",
-        "Statement",
-        "Importer"
-    ],
-    "homepage": "https://github.com/VitexSoftware/AbraFlexi-Revolut",
-    "image": "",
-    "ociimage": "docker.io/vitexsoftware/abraflexi-revolut",
-    "executable": "abraflexi-revolut-csv-import",
-    "environment": {
-        "APP_DEBUG": {
-            "type": "bool",
-            "description": {
-                "en": "Enable debug mode",
-                "cs": "Povolit režim ladění"
-            },
-            "defval": false,
-            "required": false,
-            "category": "Behavior"
-        },
-        "EASE_LOGGER": {
-            "type": "string",
-            "description": {
-                "en": "Logging method",
-                "cs": "Metoda protokolování"
-            },
-            "defval": "syslog|console",
-            "required": false,
-            "category": "Behavior"
-        },
-        "ABRAFLEXI_COMPANY": {
-            "type": "string",
-            "description": {
-                "en": "AbraFlexi Company code/database name",
-                "cs": "AbraFlexi Kód společnosti/název databáze"
-            },
-            "defval": "demo_de",
-            "required": true,
-            "category": "API"
-        },
-        "ABRAFLEXI_LOGIN": {
-            "type": "string",
-            "description": {
-                "en": "AbraFlexi Login",
-                "cs": "Přihlašovací jméno AbraFlexi"
-            },
-            "defval": "winstrom",
-            "required": true,
-            "category": "API"
-        },
-        "ABRAFLEXI_PASSWORD": {
-            "type": "password",
-            "description": {
-                "en": "AbraFlexi password",
-                "cs": "Heslo AbraFlexi"
-            },
-            "defval": "winstrom",
-            "required": true,
-            "category": "API"
-        },
-        "ABRAFLEXI_URL": {
-            "type": "string",
-            "description": {
-                "en": "AbraFlexi Server URI",
-                "cs": "AbraFlexi Server URI"
-            },
-            "defval": "https://demo.flexibee.eu:5434",
-            "required": true,
-            "category": "API"
-        },
-        "ACCOUNT_IBAN": {
-            "type": "string",
-            "description": {
-                "en": "Revolut IBAN",
-                "cs": "Revolut IBAN"
-            },
-            "defval": "",
-            "required": true,
-            "category": "Other"
-        },
-        "REVOLUT_CSV": {
-            "type": "file-path",
-            "description": {
-                "en": "Excel statements csv file",
-                "cs": "Soubor výpisu z Excelu ve formátu csv"
-            },
-            "defval": "",
-            "required": true,
-            "category": "Other"
-        },
-        "RESULT_FILE": {
-            "type": "file-path",
-            "description": {
-                "en": "Result report file",
-                "cs": "Soubor s výslednou zprávou"
-            },
-            "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
-            "required": false,
-            "category": "Other"
-        }
+    "ABRAFLEXI_COMPANY": {
+      "type": "string",
+      "description": {
+        "en": "AbraFlexi Company code/database name",
+        "cs": "AbraFlexi Kód společnosti/název databáze"
+      },
+      "defval": "demo_de",
+      "required": true,
+      "category": "API"
     },
-    "exitCodes": {
-        "0": {
-            "description": {
-                "en": "Success",
-                "cs": "Úspěch"
-            },
-            "severity": "success",
-            "retry": false
-        },
-        "1": {
-            "description": {
-                "en": "General error",
-                "cs": "Obecná chyba"
-            },
-            "severity": "error",
-            "retry": true
-        }
+    "ABRAFLEXI_LOGIN": {
+      "type": "string",
+      "description": {
+        "en": "AbraFlexi Login",
+        "cs": "Přihlašovací jméno AbraFlexi"
+      },
+      "defval": "winstrom",
+      "required": true,
+      "category": "API"
+    },
+    "ABRAFLEXI_PASSWORD": {
+      "type": "password",
+      "description": {
+        "en": "AbraFlexi password",
+        "cs": "Heslo AbraFlexi"
+      },
+      "defval": "winstrom",
+      "required": true,
+      "category": "API"
+    },
+    "ABRAFLEXI_URL": {
+      "type": "string",
+      "description": {
+        "en": "AbraFlexi Server URI",
+        "cs": "URI AbraFlexi Serveru"
+      },
+      "defval": "https://demo.flexibee.eu:5434",
+      "required": true,
+      "category": "API"
+    },
+    "ACCOUNT_IBAN": {
+      "type": "string",
+      "description": {
+        "en": "Revolut IBAN",
+        "cs": "Revolut IBAN"
+      },
+      "defval": "",
+      "required": true,
+      "category": "Other"
+    },
+    "REVOLUT_CSV": {
+      "type": "file-path",
+      "description": {
+        "en": "Excel statements csv file",
+        "cs": "Soubor výpisu z Excelu ve formátu csv"
+      },
+      "defval": "",
+      "required": true,
+      "category": "Other"
+    },
+    "RESULT_FILE": {
+      "type": "file-path",
+      "description": {
+        "en": "Result report file",
+        "cs": "Soubor s výslednou zprávou"
+      },
+      "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
+      "required": false,
+      "category": "Other"
     }
+  },
+  "exitCodes": {
+    "0": {
+      "description": {
+        "en": "Success",
+        "cs": "Úspěch"
+      },
+      "severity": "success",
+      "retry": false
+    },
+    "1": {
+      "description": {
+        "en": "General error",
+        "cs": "Obecná chyba"
+      },
+      "severity": "error",
+      "retry": true
+    }
+  }
 }

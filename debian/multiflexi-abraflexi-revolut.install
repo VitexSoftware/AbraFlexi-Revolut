@@ -1,2 +1,4 @@
-multiflexi/*  usr/lib/abraflexi-revolut/multiflexi
+multiflexi/*.json  usr/lib/abraflexi-revolut/multiflexi
+multiflexi/*.svg   usr/share/multiflexi/images
+
 
