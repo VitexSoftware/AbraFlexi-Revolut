@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.vitexsoftware.abraflexi_revolut</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>abraflexi-revolut</name>
+  <summary>Revolut statements importer into AbraFlexi</summary>
+  <description>
+    <p>
+      Revolut CSV statements import into AbraFlexi Easy way how to generate your invoices every day
+    </p>
+  </description>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <url type="homepage">https://github.com/VitexSoftware/AbraFlexi-Revolut</url>
+  <url type="bugtracker">https://github.com/VitexSoftware/AbraFlexi-Revolut/issues</url>
+  <developer id="cz.vitexsoftware">
+    <name>VitexSoftware</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+</component>
