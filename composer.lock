@@ -55,7 +55,6 @@
                 "issues": "http://pear.php.net/bugs/search.php?cmd=display&package_name[]=Console_Getopt",
                 "source": "https://github.com/pear/Console_Getopt"
             },
-            "abandoned": true,
             "time": "2019-11-20T18:27:48+00:00"
         },
         {
@@ -346,16 +345,16 @@
         },
         {
             "name": "vitexsoftware/ease-core",
-            "version": "v1.50.0",
+            "version": "v1.50.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/VitexSoftware/php-ease-core.git",
-                "reference": "37271007e14cf7ee44dc68485106236f03b6619e"
+                "reference": "77f160db1e838a3b895dedb3af8597d8673efe0c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/VitexSoftware/php-ease-core/zipball/37271007e14cf7ee44dc68485106236f03b6619e",
-                "reference": "37271007e14cf7ee44dc68485106236f03b6619e",
+                "url": "https://api.github.com/repos/VitexSoftware/php-ease-core/zipball/77f160db1e838a3b895dedb3af8597d8673efe0c",
+                "reference": "77f160db1e838a3b895dedb3af8597d8673efe0c",
                 "shasum": ""
             },
             "require": {
@@ -399,7 +398,7 @@
             "homepage": "http://v.s.cz/ease.php",
             "support": {
                 "issues": "https://github.com/VitexSoftware/php-ease-core/issues",
-                "source": "https://github.com/VitexSoftware/php-ease-core/tree/v1.50.0"
+                "source": "https://github.com/VitexSoftware/php-ease-core/tree/v1.50.1"
             },
             "funding": [
                 {
@@ -407,7 +406,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-01-31T21:27:31+00:00"
+            "time": "2026-02-04T09:03:54+00:00"
         }
     ],
     "packages-dev": [
