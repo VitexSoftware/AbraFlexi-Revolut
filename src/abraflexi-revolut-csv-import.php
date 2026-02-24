@@ -99,53 +99,58 @@ if ($csvFile) {
             $currency = \array_key_exists('Currency', $transaction) ? $transaction['Currency'] : $transaction['Měna'];
             $desc = \array_key_exists('Description', $transaction) ? $transaction['Description'] : $transaction['Popis'];
 
-                $transNumber = $completed;
+            $transNumber = $completed;
 
-                // Normalize CSV amount to float (handle Czech formatting like "1 234,56")
-                $normalizedAmount = (float) str_replace([',', ' '], ['.', ''], $amount);
+            // Normalize CSV amount to float (handle Czech formatting like "1 234,56")
+            $normalizedAmount = (float) str_replace([',', ' '], ['.', ''], $amount);
 
-                // Fetch any records with same incoming number and then compare amount/currency/description
-                $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod', 'sumOsv', 'sumOsvMen', 'mena', 'popis', 'cisDosle'], ['cisDosle' => $transNumber]);
+            // Fetch any records with same incoming number and then compare amount/currency/description
+            $candidates = $banker->getColumnsFromAbraFlexi(['id', 'kod', 'sumOsv', 'sumOsvMen', 'mena', 'popis', 'cisDosle'], ['cisDosle' => $transNumber]);
 
-                $isDuplicate = false;
-                if (!empty($candidates)) {
-                    foreach ($candidates as $cand) {
-                        // Determine candidate amount (local vs foreign)
-                        $candAmount = null;
-                        if (array_key_exists('sumOsv', $cand) && $cand['sumOsv'] !== null && $cand['sumOsv'] !== '') {
-                            $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsv']);
-                        } elseif (array_key_exists('sumOsvMen', $cand) && $cand['sumOsvMen'] !== null && $cand['sumOsvMen'] !== '') {
-                            $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsvMen']);
-                        }
+            $isDuplicate = false;
 
-                        $candCurrency = array_key_exists('mena', $cand) ? $cand['mena'] : null;
-                        $candDesc = array_key_exists('popis', $cand) ? $cand['popis'] : '';
+            if (!empty($candidates)) {
+                foreach ($candidates as $cand) {
+                    // Determine candidate amount (local vs foreign)
+                    $candAmount = null;
 
-                        // Compare amounts with small tolerance and currency + description substring
-                        if ($candAmount !== null && abs($candAmount - $normalizedAmount) < 0.01) {
-                            if ($candCurrency === $currency) {
-                                // If description matches at least partially, treat as duplicate
-                                $descMatch = false;
-                                if ($desc && $candDesc) {
-                                    $shortDesc = mb_substr(trim($desc), 0, 50);
-                                    if ($shortDesc !== '' && mb_stripos($candDesc, $shortDesc) !== false) {
-                                        $descMatch = true;
-                                    }
+                    if (\array_key_exists('sumOsv', $cand) && $cand['sumOsv'] !== null && $cand['sumOsv'] !== '') {
+                        $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsv']);
+                    } elseif (\array_key_exists('sumOsvMen', $cand) && $cand['sumOsvMen'] !== null && $cand['sumOsvMen'] !== '') {
+                        $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsvMen']);
+                    }
+
+                    $candCurrency = \array_key_exists('mena', $cand) ? $cand['mena'] : null;
+                    $candDesc = \array_key_exists('popis', $cand) ? $cand['popis'] : '';
+
+                    // Compare amounts with small tolerance and currency + description substring
+                    if ($candAmount !== null && abs($candAmount - $normalizedAmount) < 0.01) {
+                        if ($candCurrency === $currency) {
+                            // If description matches at least partially, treat as duplicate
+                            $descMatch = false;
+
+                            if ($desc && $candDesc) {
+                                $shortDesc = mb_substr(trim($desc), 0, 50);
+
+                                if ($shortDesc !== '' && mb_stripos($candDesc, $shortDesc) !== false) {
+                                    $descMatch = true;
                                 }
+                            }
 
-                                if ($descMatch || $candCurrency === $currency) {
-                                    $banker->setData($cand);
-                                    $banker->addStatusMessage(sprintf(_('payment %s already present: %s'), $banker->getRecordIdent(), implode(',', $transaction)));
-                                    ++$report['skipped'];
-                                    $isDuplicate = true;
-                                    break;
-                                }
+                            if ($descMatch || $candCurrency === $currency) {
+                                $banker->setData($cand);
+                                $banker->addStatusMessage(sprintf(_('payment %s already present: %s'), $banker->getRecordIdent(), implode(',', $transaction)));
+                                ++$report['skipped'];
+                                $isDuplicate = true;
+
+                                break;
                             }
                         }
                     }
                 }
+            }
 
-                if ($isDuplicate === false) {
+            if ($isDuplicate === false) {
                 $banker->dataReset();
                 $numRow = new \AbraFlexi\RO(\AbraFlexi\Code::ensure(Shared::cfg('DOCUMENT_NUMROW', 'REVO+')), ['evidence' => 'rada-banka']);
                 $banker->setDataValue('bezPolozek', true);
@@ -164,12 +169,13 @@ if ($csvFile) {
                     case 'FEE':
                     case 'CARD_PAYMENT':
                     case 'Platba kartou':
+                    case 'Poplatek':
                         $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
 
                         break;
                     case 'TRANSFER':
                     case 'Převod':
-                        if ($amount < 0) {
+                        if ($normalizedAmount < 0) {
                             $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
                         } else {
                             $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
@@ -177,6 +183,13 @@ if ($csvFile) {
 
                         break;
                     case 'CARD_REFUND':
+                    case 'Vrácení peněz na kartu':
+                        $report['skipped']++;
+
+                        continue 2;
+
+                        break;
+                    case 'TEMP_BLOCK':
                         $report['skipped']++;
 
                         continue 2;
@@ -185,11 +198,10 @@ if ($csvFile) {
 
                     default:
                         $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $type), 'warning');
-                        ++$report['error'];
+                        ++$report['skipped'];
 
                         continue 2;
                 }
-
 
                 $banker->setDataValue('popis', $desc);
 
@@ -200,9 +212,9 @@ if ($csvFile) {
                 $banker->setDataValue('mena', \AbraFlexi\Code::ensure($currency));
 
                 if ($currency === 'CZK') {
-                    $banker->setDataValue('sumOsv', $amount);
+                    $banker->setDataValue('sumOsv', abs($normalizedAmount));
                 } else {
-                    $banker->setDataValue('sumOsvMen', $amount);
+                    $banker->setDataValue('sumOsvMen', abs($normalizedAmount));
                 }
 
                 try {

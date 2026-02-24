@@ -1,8 +1,14 @@
-abraflexi-revolut (0.6.0) UNRELEASED; urgency=medium
+abraflexi-revolut (1.0.0) UNRELEASED; urgency=medium
+
+  * v1.0 release
+
+ -- vitex <info@vitexsoftware.cz>  Tue, 24 Feb 2026 10:49:31 +0100
+
+abraflexi-revolut (0.6.0) unstable; urgency=medium
 
   * added support for czech locale statements
 
- -- vitex <info@vitexsoftware.cz>  Sun, 31 Aug 2025 22:32:59 +0200
+ -- vitex <info@vitexsoftware.cz>  Tue, 24 Feb 2026 10:49:07 +0100
 
 abraflexi-revolut (0.5.1) unstable; urgency=medium
 

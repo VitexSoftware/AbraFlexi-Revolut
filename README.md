@@ -136,15 +136,46 @@ abraflexi-revolut-setup
 
 ### CSV File Format
 
-The Revolut CSV export should contain the following columns:
-- Date
-- Reference
-- Paid out/in
-- Exchange rate
-- Paid out/in (original currency)
-- Fee
-- Description
-- Balance
+Both English and Czech Revolut CSV exports are supported.
+
+#### English Format
+| Column | Example |
+|--------|--------|
+| Type | TOPUP, CARD_PAYMENT, FEE, TRANSFER, CARD_REFUND |
+| Product | Current |
+| Started Date | 2025-09-04 08:04:10 |
+| Completed Date | 2025-09-04 08:04:11 |
+| Description | Payment from John |
+| Amount | 163.68 (positive=income, negative=expense) |
+| Fee | 0.00 |
+| Currency | EUR, CZK |
+| State | COMPLETED |
+| Balance | 170.09 |
+
+#### Czech Format (cs / cs-cz)
+| Sloupec | Příklad |
+|---------|--------|
+| Typ | Dobíjení, Platba kartou, Poplatek, Převod, Vrácení peněz na kartu |
+| Produkt | Aktuální |
+| Datum zahájení | 2025-09-04 08:04:10 |
+| Datum dokončení | 2025-09-04 08:04:11 |
+| Popis | Platba od HANA DVORAKOVA |
+| Částka | 163.68 (kladná=příjem, záporná=výdaj) |
+| Poplatek | 0.00 |
+| Měna | EUR, CZK |
+| State | DOKONČENO |
+| Zůstatek | 170.09 |
+
+#### Supported Transaction Types
+
+| English | Czech | Direction |
+|---------|-------|-----------|
+| TOPUP | Dobíjení | Income |
+| CARD_PAYMENT | Platba kartou | Expense |
+| FEE | Poplatek | Expense |
+| TRANSFER | Převod | Depends on amount sign |
+| CARD_REFUND | Vrácení peněz na kartu | Skipped |
+| TEMP_BLOCK | — | Skipped |
 
 ## MultiFlexi Integration
 
