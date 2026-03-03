@@ -1,11 +1,41 @@
 #!/usr/bin/make -f
 
 %:
-	dh $@
+	dh $@ --with phpcomposer
+
+override_dh_auto_build:
+	# Generate Debian autoloader for abraflexi-revolut
+	cat > debian/autoload.php <<'AUTOLOADER'
+<?php
+// Debian autoloader for abraflexi-revolut
+// Load dependency autoloaders
+require_once '/usr/share/php/AbraFlexi/autoload.php';
+require_once '/usr/share/php/Ease/autoload.php';
+
+// PSR-4 autoloader for application classes
+spl_autoload_register(function (string $$class): void {
+    $$prefixes = [
+        'Vitexsoftware\\AbraflexiRevolut\\' => '/usr/lib/abraflexi-revolut/src/',
+    ];
+    foreach ($$prefixes as $$prefix => $$baseDir) {
+        $$len = strlen($$prefix);
+        if (strncmp($$prefix, $$class, $$len) !== 0) {
+            continue;
+        }
+        $$relativeClass = substr($$class, $$len);
+        $$file = $$baseDir . str_replace('\\', '/', $$relativeClass) . '.php';
+        if (file_exists($$file)) {
+            require $$file;
+            return;
+        }
+    }
+});
+AUTOLOADER
 
 override_dh_install:
-	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//' `'"' debian/conf/composer.json |sponge debian/conf/composer.json
+	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//' `'"'  debian/conf/composer.json |sponge debian/conf/composer.json
 	dh_install
-	sed -i -e 's/..\/vendor/\/var\/lib\/composer\/abraflexi-revolut/g' 	             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
+	install -D -m 0644 debian/autoload.php debian/abraflexi-revolut/usr/share/php/abraflexi-revolut/autoload.php
+	sed -i -e 's/..\/..\/vendor/\/usr\/share\/php\/abraflexi-revolut/g' 	             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
 	sed -i -e 's/..\/.env//'                                                             debian/abraflexi-revolut/usr/lib/abraflexi-revolut/*.php
 	jq '.version = "'`dpkg-parsechangelog | sed -n 's/^Version: //p'| sed 's/~.*//'`'"'  debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.multiflexi.app.json | sponge debian/multiflexi-abraflexi-revolut/usr/lib/abraflexi-revolut/multiflexi/abraflexi_revolut.multiflexi.app.json
