@@ -99,7 +99,7 @@ if ($csvFile) {
             $currency = \array_key_exists('Currency', $transaction) ? $transaction['Currency'] : $transaction['Měna'];
             $desc = \array_key_exists('Description', $transaction) ? $transaction['Description'] : $transaction['Popis'];
 
-            $transNumber = $completed;
+            $transNumber = substr(md5($started . $currency . $amount . $completed), 0, 16);
 
             // Normalize CSV amount to float (handle Czech formatting like "1 234,56")
             $normalizedAmount = (float) str_replace([',', ' '], ['.', ''], $amount);
@@ -115,7 +115,7 @@ if ($csvFile) {
                     $candAmount = null;
 
                     if (\array_key_exists('sumOsv', $cand) && $cand['sumOsv'] !== null && $cand['sumOsv'] !== '') {
-                        $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsv']);
+                        $candAmount = (float) str_replace([',', ' '], ['.', ''], (string)$cand['sumOsv']);
                     } elseif (\array_key_exists('sumOsvMen', $cand) && $cand['sumOsvMen'] !== null && $cand['sumOsvMen'] !== '') {
                         $candAmount = (float) str_replace([',', ' '], ['.', ''], $cand['sumOsvMen']);
                     }
