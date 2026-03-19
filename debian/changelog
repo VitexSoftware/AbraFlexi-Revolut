@@ -1,8 +1,14 @@
-abraflexi-revolut (1.0.0) UNRELEASED; urgency=medium
+abraflexi-revolut (1.1.0) UNRELEASED; urgency=medium
+
+  * ext id based deduplication
+
+ -- vitex <info@vitexsoftware.cz>  Thu, 19 Mar 2026 07:16:36 +0100
+
+abraflexi-revolut (1.0.0) unstable; urgency=medium
 
   * v1.0 release
 
- -- vitex <info@vitexsoftware.cz>  Tue, 24 Feb 2026 10:49:31 +0100
+ -- vitex <info@vitexsoftware.cz>  Thu, 19 Mar 2026 07:16:17 +0100
 
 abraflexi-revolut (0.6.0) unstable; urgency=medium
 

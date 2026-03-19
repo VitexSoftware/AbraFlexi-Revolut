@@ -45,7 +45,7 @@ class RevolutCsvHelper
      * @param string $type   Transaction type from CSV (English or Czech)
      * @param float  $amount Normalized amount
      *
-     * @return string|null 'typPohybu.prijem', 'typPohybu.vydej', 'skip', or null for unknown
+     * @return null|string 'typPohybu.prijem', 'typPohybu.vydej', 'skip', or null for unknown
      */
     public static function resolveMovementType(string $type, float $amount): ?string
     {
@@ -66,6 +66,7 @@ class RevolutCsvHelper
             case 'Vrácení peněz na kartu':
             case 'TEMP_BLOCK':
                 return 'skip';
+
             default:
                 return null;
         }
@@ -77,7 +78,7 @@ class RevolutCsvHelper
      * @param array  $transaction The transaction row
      * @param string $englishKey  The English column name
      *
-     * @return string|null The value or null if not found
+     * @return null|string The value or null if not found
      */
     public static function getColumn(array $transaction, string $englishKey): ?string
     {
