@@ -7,7 +7,7 @@ require_once '/usr/share/php/Ease/autoload.php';
 // PSR-4 autoloader for application classes
 spl_autoload_register(function (string $class): void {
     $prefixes = [
-        'Vitexsoftware\\AbraflexiRevolut\\' => '/usr/lib/abraflexi-revolut/src/',
+        'Vitexsoftware\\AbraflexiRevolut\\' => '/usr/lib/abraflexi-revolut/',
     ];
     foreach ($prefixes as $prefix => $baseDir) {
         $len = strlen($prefix);
