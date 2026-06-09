@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/VitexSoftware/php-vitexsoftware-multiflexi-core/refs/heads/main/schema/application.json",
   "version": "0.2.0",
-  "schemaVersion": "3.2.1",
+  "schemaVersion": "3.4.0",
   "uuid": "4d423df1-8179-490f-89e4-e5a25110d3bb",
   "name": {
     "en": "AbraFlexi Revolut statements import",
@@ -11,12 +11,34 @@
     "en": "Import Revolut bank statements into AbraFlexi",
     "cs": "Import Revolut bankovních výpisů do AbraFlexi"
   },
-  "requirements": ["Revolut", "AbraFlexi"],
-  "tags": ["Revolut", "Statement", "Importer"],
+  "requirements": [
+    "Revolut",
+    "AbraFlexi"
+  ],
+  "tags": [
+    "Revolut",
+    "Statement",
+    "Importer"
+  ],
   "homepage": "https://github.com/VitexSoftware/AbraFlexi-Revolut",
   "image": "",
   "ociimage": "docker.io/vitexsoftware/abraflexi-revolut",
   "executable": "abraflexi-revolut-csv-import",
+  "events": {
+    "consumes": {
+      "bank.statement.downloaded": {
+        "description": "A bank statement file was downloaded",
+        "format": "file"
+      }
+    },
+    "emits": {
+      "bank.statement.imported": {
+        "description": "A bank statement was imported into the accounting system",
+        "evidence": "banka",
+        "operation": "create"
+      }
+    }
+  },
   "environment": {
     "APP_DEBUG": {
       "type": "bool",
