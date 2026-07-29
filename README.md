@@ -3,6 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PHP Version](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://php.net)
 [![MultiFlexi Ready](https://img.shields.io/badge/MultiFlexi-Ready-green.svg)](https://multiflexi.eu)
+![Packaging: deb](https://img.shields.io/badge/packaging-.deb-red?logo=debian&logoColor=white)
 
 Import Revolut bank statements (CSV format) into AbraFlexi accounting system.
 
