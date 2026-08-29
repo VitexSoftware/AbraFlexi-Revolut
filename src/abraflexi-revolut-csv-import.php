@@ -110,13 +110,13 @@ if ($csvFile) {
                     $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $type), 'warning');
                     ++$report['skipped'];
 
-                    continue 2;
+                    continue;
                 }
 
                 if ($movementType === 'skip') {
                     $report['skipped']++;
 
-                    continue 2;
+                    continue;
                 }
 
                 $banker->setDataValue('typPohybuK', $movementType); // Příjem/Výdej
