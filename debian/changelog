@@ -1,3 +1,10 @@
+abraflexi-revolut (1.1.1) unstable; urgency=medium
+
+  * Fix Revolut CSV import silently skipping all transactions due to
+    unrecognized transaction type strings.
+
+ -- vitex <info@vitexsoftware.cz>  Sat, 29 Aug 2026 14:35:32 +0200
+
 abraflexi-revolut (1.1.0) unstable; urgency=medium
 
   * ext id based deduplication
