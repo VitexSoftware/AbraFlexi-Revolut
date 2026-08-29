@@ -24,6 +24,62 @@
   "image": "",
   "ociimage": "docker.io/vitexsoftware/abraflexi-revolut",
   "executable": "abraflexi-revolut-csv-import",
+  "consumes": {
+    "revolut-statement": {
+      "description": {
+        "en": "Revolut CSV statement file to import",
+        "cs": "CSV soubor výpisu z Revolutu k importu"
+      },
+      "format": "file",
+      "target": "REVOLUT_CSV"
+    }
+  },
+  "produces": {
+    "import-result": {
+      "description": {
+        "en": "Import result report",
+        "cs": "Zpráva o výsledku importu"
+      },
+      "format": "json",
+      "fields": {
+        "input": {
+          "type": "string",
+          "description": {
+            "en": "Path to the imported CSV file",
+            "cs": "Cesta k importovanému CSV souboru"
+          }
+        },
+        "account": {
+          "type": "string",
+          "description": {
+            "en": "Revolut IBAN the statement was imported for",
+            "cs": "Revolut IBAN, pro který byl výpis importován"
+          }
+        },
+        "imported": {
+          "type": "integer",
+          "description": {
+            "en": "Number of successfully imported transactions",
+            "cs": "Počet úspěšně importovaných transakcí"
+          }
+        },
+        "skipped": {
+          "type": "integer",
+          "description": {
+            "en": "Number of skipped transactions",
+            "cs": "Počet přeskočených transakcí"
+          }
+        },
+        "exitcode": {
+          "type": "integer",
+          "description": {
+            "en": "Process exit code",
+            "cs": "Návratový kód procesu"
+          }
+        }
+      }
+    }
+  },
   "events": {
     "consumes": {
       "bank.statement.downloaded": {
@@ -126,7 +182,7 @@
         "en": "Result report file",
         "cs": "Soubor s výslednou zprávou"
       },
-      "defval": "revolut-import-{ACCOUNT_IBAN}.csv",
+      "defval": "revolut-import-{ACCOUNT_IBAN}.json",
       "required": false,
       "category": "Other"
     }
