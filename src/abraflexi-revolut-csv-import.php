@@ -14,6 +14,7 @@ declare(strict_types=1);
  */
 
 use Ease\Shared;
+use Vitexsoftware\AbraflexiRevolut\RevolutCsvHelper;
 
 \define('APP_NAME', 'RevolutCSVtoAbraFlexi');
 
@@ -68,42 +69,26 @@ if (Shared::cfg('APP_DEBUG', false)) {
 }
 
 if ($csvFile) {
-    $row = 1;
-    $transactions = [];
-    $columns = [];
-
-    if (($handle = fopen($csvFile, 'rb')) !== false) {
-        while (($data = fgetcsv($handle, 1000, ',', '"', '\\')) !== false) { // Added the escape parameter '\\'
-            if ($row++ === 1) {
-                $columns = $data;
-                $num = \count($data);
-
-                continue;
-            }
-
-            $transactions[] = array_combine($columns, $data);
-        }
-
-        fclose($handle);
-    }
+    $transactions = RevolutCsvHelper::parseCsv($csvFile);
 
     $banker = new \AbraFlexi\Banka();
     $banker->addStatusMessage(sprintf(_('Importing %d transactions from %s file'), \count($transactions), $csvFile));
 
     foreach ($transactions as $transaction) {
-        if (($transaction['State'] === 'COMPLETED') || ($transaction['State'] === 'DOKONČENO')) {
-            $type = \array_key_exists('Type', $transaction) ? $transaction['Type'] : $transaction['Typ'];
-            $completed = \array_key_exists('Completed Date', $transaction) ? $transaction['Completed Date'] : $transaction['Datum dokončení'];
-            $started = \array_key_exists('Started Date', $transaction) ? $transaction['Started Date'] : $transaction['Datum zahájení'];
-            $amount = \array_key_exists('Amount', $transaction) ? $transaction['Amount'] : $transaction['Částka'];
-            $currency = \array_key_exists('Currency', $transaction) ? $transaction['Currency'] : $transaction['Měna'];
-            $desc = \array_key_exists('Description', $transaction) ? $transaction['Description'] : $transaction['Popis'];
-            $balance = \array_key_exists('Balance', $transaction) ? $transaction['Balance'] : $transaction['Zůstatek'];
+        $state = RevolutCsvHelper::getColumn($transaction, 'State');
+
+        if (RevolutCsvHelper::isCompleted($state)) {
+            $type = RevolutCsvHelper::getColumn($transaction, 'Type');
+            $completed = RevolutCsvHelper::getColumn($transaction, 'Completed Date');
+            $started = RevolutCsvHelper::getColumn($transaction, 'Started Date');
+            $amount = RevolutCsvHelper::getColumn($transaction, 'Amount');
+            $currency = RevolutCsvHelper::getColumn($transaction, 'Currency');
+            $desc = RevolutCsvHelper::getColumn($transaction, 'Description');
+            $balance = RevolutCsvHelper::getColumn($transaction, 'Balance');
 
             $transNumber = substr($currency.$started.$amount, 0, 40);
             $extId = 'ext:rev:'.substr(base_convert(md5($started.$currency.$amount.$completed.$balance), 16, 36), 0, 8);
-            // Normalize CSV amount to float (handle Czech formatting like "1 234,56")
-            $normalizedAmount = (float) str_replace([',', ' '], ['.', ''], $amount);
+            $normalizedAmount = RevolutCsvHelper::normalizeAmount($amount);
 
             // Fetch any records with same incoming number and then compare amount/currency/description
 
@@ -119,45 +104,22 @@ if ($csvFile) {
                 $banker->setDataValue('banka', $account);
 
                 // Nastavení typu pohybu podle typu transakce
-                switch ($type) {
-                    case 'TOPUP':
-                    case 'REVERTED':
-                    case 'Dobíjení':
-                        $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
+                $movementType = RevolutCsvHelper::resolveMovementType($type, $normalizedAmount);
 
-                        break;
-                    case 'FEE':
-                    case 'CARD_PAYMENT':
-                    case 'Platba kartou':
-                    case 'Poplatek':
-                        $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
+                if ($movementType === null) {
+                    $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $type), 'warning');
+                    ++$report['skipped'];
 
-                        break;
-                    case 'TRANSFER':
-                    case 'Převod':
-                        if ($normalizedAmount < 0) {
-                            $banker->setDataValue('typPohybuK', 'typPohybu.vydej'); // Výdej
-                        } else {
-                            $banker->setDataValue('typPohybuK', 'typPohybu.prijem'); // Příjem
-                        }
-
-                        break;
-                    case 'CARD_REFUND':
-                    case 'Vrácení peněz na kartu':
-                        $report['skipped']++;
-
-                        continue 2;
-                    case 'TEMP_BLOCK':
-                        $report['skipped']++;
-
-                        continue 2;
-
-                    default:
-                        $banker->addStatusMessage(sprintf(_('Unknown transaction type %s'), $type), 'warning');
-                        ++$report['skipped'];
-
-                        continue 2;
+                    continue 2;
                 }
+
+                if ($movementType === 'skip') {
+                    $report['skipped']++;
+
+                    continue 2;
+                }
+
+                $banker->setDataValue('typPohybuK', $movementType); // Příjem/Výdej
 
                 $banker->setDataValue('popis', $desc);
 

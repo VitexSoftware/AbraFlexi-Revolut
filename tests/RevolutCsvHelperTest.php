@@ -89,6 +89,35 @@ class RevolutCsvHelperTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
+    // resolveMovementType — current Revolut CSV export (Title Case) types
+    // -------------------------------------------------------------------------
+
+    public function testResolveMovementTypeTopupTitleCase(): void
+    {
+        $this->assertSame('typPohybu.prijem', RevolutCsvHelper::resolveMovementType('Topup', 100.0));
+    }
+
+    public function testResolveMovementTypeCardPaymentTitleCase(): void
+    {
+        $this->assertSame('typPohybu.vydej', RevolutCsvHelper::resolveMovementType('Card Payment', -50.0));
+    }
+
+    public function testResolveMovementTypeTransferTitleCaseNegative(): void
+    {
+        $this->assertSame('typPohybu.vydej', RevolutCsvHelper::resolveMovementType('Transfer', -30.0));
+    }
+
+    public function testResolveMovementTypeTransferTitleCasePositive(): void
+    {
+        $this->assertSame('typPohybu.prijem', RevolutCsvHelper::resolveMovementType('Transfer', 400.0));
+    }
+
+    public function testResolveMovementTypeRevPayment(): void
+    {
+        $this->assertSame('typPohybu.vydej', RevolutCsvHelper::resolveMovementType('Rev Payment', -6.12));
+    }
+
+    // -------------------------------------------------------------------------
     // resolveMovementType — Czech types
     // -------------------------------------------------------------------------
 

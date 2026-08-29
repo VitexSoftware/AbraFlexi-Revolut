@@ -27,6 +27,7 @@ class RevolutCsvHelper
         'Amount' => 'Částka',
         'Currency' => 'Měna',
         'Description' => 'Popis',
+        'Balance' => 'Zůstatek',
         'State' => 'State', // State column keeps the same name in both formats
     ];
 
@@ -53,14 +54,18 @@ class RevolutCsvHelper
             case 'TOPUP':
             case 'REVERTED':
             case 'Dobíjení':
+            case 'Topup':
                 return 'typPohybu.prijem';
             case 'FEE':
             case 'CARD_PAYMENT':
             case 'Platba kartou':
             case 'Poplatek':
+            case 'Card Payment':
                 return 'typPohybu.vydej';
             case 'TRANSFER':
             case 'Převod':
+            case 'Transfer':
+            case 'Rev Payment':
                 return $amount < 0 ? 'typPohybu.vydej' : 'typPohybu.prijem';
             case 'CARD_REFUND':
             case 'Vrácení peněz na kartu':
