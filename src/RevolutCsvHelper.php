@@ -109,6 +109,33 @@ class RevolutCsvHelper
     }
 
     /**
+     * Check that a transaction row carries the columns needed to import it
+     * (Amount, Started Date, Currency).
+     */
+    public static function hasRequiredColumns(array $transaction): bool
+    {
+        return self::getColumn($transaction, 'Amount') !== null
+            && self::getColumn($transaction, 'Started Date') !== null
+            && self::getColumn($transaction, 'Currency') !== null;
+    }
+
+    /**
+     * Build the AbraFlexi document number (cisDosle) for a transaction.
+     */
+    public static function buildTransNumber(string $currency, string $started, string $amount): string
+    {
+        return substr($currency.$started.$amount, 0, 40);
+    }
+
+    /**
+     * Build a stable external id (used for deduplication) for a transaction.
+     */
+    public static function buildExternalId(string $started, string $currency, string $amount, ?string $completed, ?string $balance): string
+    {
+        return 'ext:rev:'.substr(base_convert(md5($started.$currency.$amount.$completed.$balance), 16, 36), 0, 8);
+    }
+
+    /**
      * Parse a CSV file into an array of transactions.
      *
      * @param string $csvFile Path to the CSV file

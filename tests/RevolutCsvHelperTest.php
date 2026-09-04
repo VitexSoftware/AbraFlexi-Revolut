@@ -293,4 +293,85 @@ class RevolutCsvHelperTest extends TestCase
         $this->assertEqualsWithDelta(165.99, $absAmount, 0.001);
         $this->assertSame('typPohybu.vydej', RevolutCsvHelper::resolveMovementType('Poplatek', $normalized));
     }
+
+    // -------------------------------------------------------------------------
+    // hasRequiredColumns
+    // -------------------------------------------------------------------------
+
+    public function testHasRequiredColumnsComplete(): void
+    {
+        $tx = ['Amount' => '100.00', 'Started Date' => '2025-09-04', 'Currency' => 'EUR'];
+        $this->assertTrue(RevolutCsvHelper::hasRequiredColumns($tx));
+    }
+
+    public function testHasRequiredColumnsCzechComplete(): void
+    {
+        $tx = ['Částka' => '100.00', 'Datum zahájení' => '2025-09-04', 'Měna' => 'EUR'];
+        $this->assertTrue(RevolutCsvHelper::hasRequiredColumns($tx));
+    }
+
+    public function testHasRequiredColumnsMissingAmount(): void
+    {
+        $tx = ['Started Date' => '2025-09-04', 'Currency' => 'EUR'];
+        $this->assertFalse(RevolutCsvHelper::hasRequiredColumns($tx));
+    }
+
+    public function testHasRequiredColumnsMissingStartedDate(): void
+    {
+        $tx = ['Amount' => '100.00', 'Currency' => 'EUR'];
+        $this->assertFalse(RevolutCsvHelper::hasRequiredColumns($tx));
+    }
+
+    public function testHasRequiredColumnsMissingCurrency(): void
+    {
+        $tx = ['Amount' => '100.00', 'Started Date' => '2025-09-04'];
+        $this->assertFalse(RevolutCsvHelper::hasRequiredColumns($tx));
+    }
+
+    public function testHasRequiredColumnsEmpty(): void
+    {
+        $this->assertFalse(RevolutCsvHelper::hasRequiredColumns([]));
+    }
+
+    // -------------------------------------------------------------------------
+    // buildTransNumber
+    // -------------------------------------------------------------------------
+
+    public function testBuildTransNumber(): void
+    {
+        $this->assertSame(
+            'EUR2025-09-04 08:04:10163.68',
+            RevolutCsvHelper::buildTransNumber('EUR', '2025-09-04 08:04:10', '163.68'),
+        );
+    }
+
+    public function testBuildTransNumberTruncatesTo40Chars(): void
+    {
+        $result = RevolutCsvHelper::buildTransNumber('EUR', '2025-09-04 08:04:10.123456789', '163.68');
+        $this->assertLessThanOrEqual(40, \strlen($result));
+    }
+
+    // -------------------------------------------------------------------------
+    // buildExternalId
+    // -------------------------------------------------------------------------
+
+    public function testBuildExternalIdIsStableForSameInput(): void
+    {
+        $id1 = RevolutCsvHelper::buildExternalId('2025-09-04 08:04:10', 'EUR', '163.68', '2025-09-04 08:04:11', '170.09');
+        $id2 = RevolutCsvHelper::buildExternalId('2025-09-04 08:04:10', 'EUR', '163.68', '2025-09-04 08:04:11', '170.09');
+        $this->assertSame($id1, $id2);
+    }
+
+    public function testBuildExternalIdDiffersForDifferentInput(): void
+    {
+        $id1 = RevolutCsvHelper::buildExternalId('2025-09-04 08:04:10', 'EUR', '163.68', '2025-09-04 08:04:11', '170.09');
+        $id2 = RevolutCsvHelper::buildExternalId('2025-09-04 08:04:10', 'EUR', '163.69', '2025-09-04 08:04:11', '170.09');
+        $this->assertNotSame($id1, $id2);
+    }
+
+    public function testBuildExternalIdHasExpectedPrefix(): void
+    {
+        $id = RevolutCsvHelper::buildExternalId('2025-09-04 08:04:10', 'EUR', '163.68', null, null);
+        $this->assertStringStartsWith('ext:rev:', $id);
+    }
 }

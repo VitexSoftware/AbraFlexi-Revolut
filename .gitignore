@@ -15,3 +15,5 @@
 /debian/abraflexi-revolut.substvars
 /debian/files
 /.build/
+/.phpunit.cache/
+__pycache__/

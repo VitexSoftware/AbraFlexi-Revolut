@@ -68,10 +68,11 @@ if (Shared::cfg('APP_DEBUG', false)) {
     $account->logBanner();
 }
 
+$banker = new \AbraFlexi\Banka();
+
 if ($csvFile) {
     $transactions = RevolutCsvHelper::parseCsv($csvFile);
 
-    $banker = new \AbraFlexi\Banka();
     $banker->addStatusMessage(sprintf(_('Importing %d transactions from %s file'), \count($transactions), $csvFile));
 
     foreach ($transactions as $transaction) {
@@ -86,8 +87,18 @@ if ($csvFile) {
             $desc = RevolutCsvHelper::getColumn($transaction, 'Description');
             $balance = RevolutCsvHelper::getColumn($transaction, 'Balance');
 
-            $transNumber = substr($currency.$started.$amount, 0, 40);
-            $extId = 'ext:rev:'.substr(base_convert(md5($started.$currency.$amount.$completed.$balance), 16, 36), 0, 8);
+            if (RevolutCsvHelper::hasRequiredColumns($transaction) === false) {
+                $report['errors'][] = [
+                    'transaction' => $transaction,
+                    'error' => 'Missing required column (Amount/Started Date/Currency)',
+                ];
+                $report['exitcode'] = 1;
+
+                continue;
+            }
+
+            $transNumber = RevolutCsvHelper::buildTransNumber($currency, $started, $amount);
+            $extId = RevolutCsvHelper::buildExternalId($started, $currency, $amount, $completed, $balance);
             $normalizedAmount = RevolutCsvHelper::normalizeAmount($amount);
 
             // Fetch any records with same incoming number and then compare amount/currency/description
@@ -160,7 +171,7 @@ if ($csvFile) {
 
 $banker->addStatusMessage('import done', 'debug');
 
-$report['exitcode'] = $exitcode;
+$exitcode = $report['exitcode'];
 $written = file_put_contents($destination, json_encode($report, Shared::cfg('DEBUG') ? \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE : 0));
 $banker->addStatusMessage(sprintf(_('Saving result to %s'), $destination), $written ? 'success' : 'error');
 
