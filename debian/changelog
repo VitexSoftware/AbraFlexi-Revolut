@@ -1,8 +1,15 @@
 abraflexi-revolut (1.2.0) unstable; urgency=medium
 
   * Add abraflexi-revolut-statement-downloader package: browser-
-    automated Revolut statement download via QR-code login, with multi-
-    currency support.
+    automated Revolut statement download via QR-code login, with
+    multi-currency support (one CSV per currency pocket).
+  * Fix abraflexi-revolut-csv-import: exit code no longer stays 0 when
+    a transaction fails to import, and a missing CSV file no longer
+    crashes the script.
+  * Update the Revolut statement downloader for Revolut's current
+    website: QR-only login, cookie-banner dismissal, working account
+    switcher and date-range picker, and drop the webdriver-manager
+    pip dependency in favor of the system chromium-driver package.
 
  -- Vítězslav Dvořák <info@vitexsoftware.cz>  Sat, 05 Sep 2026 17:20:41 +0200
 
