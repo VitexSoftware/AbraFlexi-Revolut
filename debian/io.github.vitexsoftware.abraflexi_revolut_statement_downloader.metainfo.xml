@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="console-application">
+  <id>io.github.vitexsoftware.abraflexi_revolut_statement_downloader</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Revolut Statement Downloader</name>
+  <summary>Browser-automated Revolut bank statement downloader</summary>
+  <description>
+    <p>
+      Logs into Revolut via its QR-code login flow and downloads bank statement
+      CSV files, one per currency pocket for multi-currency accounts.
+    </p>
+    <p>
+      Intended to feed the downloaded CSV files into abraflexi-revolut-csv-import
+      for import into the AbraFlexi accounting system.
+    </p>
+  </description>
+  <icon type="stock">utilities-terminal</icon>
+  <provides>
+    <binary>revolut-statement-downloader</binary>
+  </provides>
+  <url type="homepage">https://github.com/VitexSoftware/AbraFlexi-Revolut</url>
+  <url type="bugtracker">https://github.com/VitexSoftware/AbraFlexi-Revolut/issues</url>
+  <developer id="cz.vitexsoftware">
+    <name>VitexSoftware</name>
+  </developer>
+  <content_rating type="oars-1.1"/>
+</component>

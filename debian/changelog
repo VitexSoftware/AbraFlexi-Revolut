@@ -1,3 +1,11 @@
+abraflexi-revolut (1.2.0) unstable; urgency=medium
+
+  * Add abraflexi-revolut-statement-downloader package: browser-
+    automated Revolut statement download via QR-code login, with multi-
+    currency support.
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Sat, 05 Sep 2026 17:20:41 +0200
+
 abraflexi-revolut (1.1.1) unstable; urgency=medium
 
   * Fix Revolut CSV import silently skipping all transactions due to

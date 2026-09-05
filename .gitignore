@@ -8,6 +8,9 @@
 /debian/multiflexi-abraflexi-revolut/
 /debian/multiflexi-abraflexi-revolut.substvars
 /debian/multiflexi-abraflexi-revolut.debhelper.log
+/debian/abraflexi-revolut-statement-downloader/
+/debian/abraflexi-revolut-statement-downloader.substvars
+/debian/abraflexi-revolut-statement-downloader.debhelper.log
 /debian/debhelper-build-stamp
 /abraflexi-revolut-social-preview.png
 /.php-cs-fixer.cache
@@ -17,3 +20,4 @@
 /.build/
 /.phpunit.cache/
 __pycache__/
+/revolut_automation/.venv/

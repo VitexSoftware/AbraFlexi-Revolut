@@ -1,0 +1,454 @@
+#!/usr/bin/python3
+import argparse
+import glob
+import logging
+import os
+import shutil
+import time
+
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+REVOLUT_APP_URL = "https://app.revolut.com/login"
+
+MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+]
+
+# The account switcher lists pockets by currency name (e.g. "Euro"), not by ISO code.
+CURRENCY_NAMES = {
+    "CZK": "Czech koruna",
+    "EUR": "Euro",
+    "USD": "US dollar",
+    "GBP": "British pound",
+}
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("revolut_statement_downloader")
+
+
+class RevolutDownloadError(RuntimeError):
+    """Raised when a required page step could not be completed."""
+
+
+def wait_for_element(driver, by, value, timeout=60, description=None):
+    """Wait for a single element to be present, raising RevolutDownloadError on timeout."""
+    try:
+        return WebDriverWait(driver, timeout).until(EC.presence_of_element_located((by, value)))
+    except TimeoutException as exc:
+        raise RevolutDownloadError(
+            f"Timed out after {timeout}s waiting for {description or value}"
+        ) from exc
+
+
+DEBUG_DIR = os.environ.get("REVOLUT_DEBUG_DIR")
+
+
+def snapshot(driver, name):
+    """Save a screenshot + page source for debugging, if REVOLUT_DEBUG_DIR is set."""
+    if not DEBUG_DIR:
+        return
+    try:
+        os.makedirs(DEBUG_DIR, exist_ok=True)
+        driver.save_screenshot(os.path.join(DEBUG_DIR, f"{name}.png"))
+        with open(os.path.join(DEBUG_DIR, f"{name}.html"), "w") as f:
+            f.write(driver.page_source)
+    except Exception as exc:
+        log.warning("Could not save debug snapshot %s: %s", name, exc)
+
+
+def close_any_overlay(driver):
+    """Best-effort dismiss of any leftover modal/overlay before starting the next currency."""
+    try:
+        driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
+        time.sleep(1)
+    except Exception:
+        pass
+
+
+def close_statement_dialog(driver):
+    """Explicitly close the Statement modal via its Close button, so it doesn't linger and
+    intercept clicks (e.g. the account switcher) for the next currency.
+
+    Note: the modal's close button has no aria-label - like the picker's Previous/Next
+    buttons, "Close" is a visually-hidden text label inside the button. A plain
+    aria-label='Close' selector matches an unrelated element (e.g. a transaction-detail
+    side panel), not this modal.
+    """
+    try:
+        close_btns = driver.find_elements(By.XPATH, "//button[.//div[contains(text(),'Close')]]")
+        if close_btns:
+            close_btns[-1].click()
+            time.sleep(1)
+    except Exception:
+        pass
+
+
+def dismiss_cookie_banner(driver):
+    """
+    Dismiss Revolut's cookie-consent banner, which otherwise sits on top of the page and
+    intercepts clicks on the Statement/account-switcher buttons behind it.
+    """
+    try:
+        reject_btn = wait_for_element(
+            driver,
+            By.XPATH,
+            "//button[.//span[contains(text(),'Reject all cookies')]]",
+            timeout=10,
+            description="cookie consent banner",
+        )
+        reject_btn.click()
+        time.sleep(1)
+        log.info("Dismissed cookie consent banner.")
+    except RevolutDownloadError:
+        log.info("No cookie consent banner found (already dismissed or not shown).")
+
+
+def wait_for_new_file(download_dir, before_files, timeout=60):
+    """Wait until a new, non-partial file appears in download_dir."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        current_files = set(glob.glob(os.path.join(download_dir, "*")))
+        new_files = [f for f in current_files - before_files if not f.endswith(".crdownload")]
+        if new_files:
+            return new_files[0]
+        time.sleep(1)
+    return None
+
+
+def select_statement_month(driver, field_label: str, year: int, month: int):
+    """
+    Open the 'Starting on'/'Ending on' month picker (identified by field_label, e.g. 'Starting on'
+    or 'Ending on') and select the given year/month.
+
+    The picker shows one year at a time with Previous/Next buttons to page between years, and a
+    grid of month cells labelled e.g. aria-label="September 2025". Selecting a month closes the
+    picker automatically.
+    """
+    field_input = wait_for_element(
+        driver,
+        By.XPATH,
+        f"//label[.//div[contains(text(),'{field_label}')]]//input",
+        timeout=10,
+        description=f"'{field_label}' field",
+    )
+    field_input.click()
+    time.sleep(1)
+
+    target_month_name = MONTH_NAMES[month - 1]
+
+    for _ in range(30):
+        year_heading = wait_for_element(
+            driver,
+            By.XPATH,
+            "//div[@role='heading' and @aria-level='2']",
+            timeout=10,
+            description="date picker year heading",
+        )
+        current_year = int(year_heading.text.strip())
+
+        if current_year == year:
+            break
+
+        direction = "Next" if year > current_year else "Previous"
+        nav_btn = wait_for_element(
+            driver,
+            By.XPATH,
+            f"//button[.//div[contains(text(),'{direction}')]]",
+            timeout=10,
+            description=f"'{direction}' year button",
+        )
+        nav_btn.click()
+        time.sleep(0.3)
+    else:
+        raise RevolutDownloadError(f"Could not navigate date picker to year {year}")
+
+    month_cell = wait_for_element(
+        driver,
+        By.XPATH,
+        f"//div[@role='gridcell' and @aria-label='{target_month_name} {year}']",
+        timeout=10,
+        description=f"{target_month_name} {year} month cell",
+    )
+    month_cell.click()
+    time.sleep(1)
+
+
+def login(driver, confirm_timeout=180):
+    """
+    Log in via Revolut's QR-code flow and wait for the mobile-confirmed redirect home.
+
+    As of the current Revolut SSO page (sso.revolut.com/signin, reached via a redirect from
+    app.revolut.com/login), a QR code is shown immediately on load - no PIN or password step
+    is involved. The QR code expires after a short idle period; this refreshes it automatically
+    while waiting for the phone to confirm.
+    """
+    driver.get(REVOLUT_APP_URL)
+
+    log.info("Waiting for login QR code to appear...")
+    # Note: svg elements live in the SVG XML namespace, so plain XPath tag matching (//svg)
+    # silently matches nothing in Chrome - use a CSS selector instead.
+    wait_for_element(
+        driver,
+        By.CSS_SELECTOR,
+        "svg[class*='QrCode'], img[src*='qr' i], img[alt*='QR' i]",
+        description="login QR code",
+    )
+    log.info("QR code displayed. Please scan it with your Revolut mobile app and confirm login on your phone.")
+
+    deadline = time.monotonic() + confirm_timeout
+    while time.monotonic() < deadline:
+        if "/home" in driver.current_url:
+            log.info("Login confirmed!")
+            return
+
+        try:
+            refresh_btn = driver.find_element(
+                By.XPATH, "//button[contains(text(),'Refresh') or contains(text(),'Obnovit')]"
+            )
+            log.info("QR code expired, refreshing...")
+            refresh_btn.click()
+        except Exception:
+            pass
+
+        time.sleep(2)
+
+    raise RevolutDownloadError(f"Login not confirmed within {confirm_timeout}s")
+
+
+def select_currency_account(driver, currency: str):
+    """
+    Best-effort switch of the active account/pocket to the given currency (e.g. 'CZK', 'EUR')
+    before generating a statement. Revolut multi-currency accounts expose an account switcher
+    listing each currency pocket; this looks for an entry whose text contains the currency code.
+    Non-fatal if it can't be found - the statement flow will just run against whatever account
+    is currently active.
+    """
+    log.info("Selecting %s account...", currency)
+    snapshot(driver, f"before_select_{currency}")
+    try:
+        switcher = wait_for_element(
+            driver,
+            By.CSS_SELECTOR,
+            "button[aria-label='Select account']",
+            timeout=10,
+            description="account switcher",
+        )
+        switcher.click()
+        time.sleep(1)
+        snapshot(driver, f"after_switcher_click_{currency}")
+
+        currency_name = CURRENCY_NAMES.get(currency, currency)
+        account_entry = wait_for_element(
+            driver,
+            By.XPATH,
+            f"//button[.//span[@title='{currency_name}']]",
+            timeout=10,
+            description=f"{currency} ({currency_name}) account entry",
+        )
+        account_entry.click()
+        time.sleep(1)
+        return True
+    except RevolutDownloadError:
+        snapshot(driver, f"select_account_failed_{currency}")
+        log.warning(
+            "Could not automatically switch to the %s account. "
+            "Make sure it is selected manually before the statement is generated.",
+            currency,
+        )
+        return False
+
+
+def generate_and_download_statement(driver, month_from: str, month_to: str, download_dir: str, currency: str = None):
+    """Run the Statement -> CSV export -> date range -> Generate flow for the currently active account."""
+    log.info("Navigating to Statement section...")
+    statement_btn = wait_for_element(
+        driver,
+        By.XPATH,
+        "//span[contains(text(),'Statement') or contains(text(),'Výpis')]",
+        description="Statement button",
+    )
+    statement_btn.click()
+    time.sleep(3)
+    snapshot(driver, f"after_statement_click_{currency}")
+
+    log.info("Selecting Excel/CSV export...")
+    try:
+        excel_btn = wait_for_element(
+            driver,
+            By.XPATH,
+            "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'csv') "
+            "or contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'excel')]",
+            timeout=10,
+            description="CSV/Excel export tab",
+        )
+        excel_btn.click()
+        time.sleep(1)
+        snapshot(driver, f"after_csv_click_{currency}")
+    except RevolutDownloadError:
+        snapshot(driver, f"csv_tab_not_found_{currency}")
+        log.warning("CSV/Excel export tab not found, continuing with default export format.")
+
+    log.info("Setting date range...")
+    try:
+        from_year, from_month = (int(part) for part in month_from.split("-"))
+        to_year, to_month = (int(part) for part in month_to.split("-"))
+        select_statement_month(driver, "Starting on", from_year, from_month)
+        select_statement_month(driver, "Ending on", to_year, to_month)
+    except RevolutDownloadError as exc:
+        log.warning("Could not set date range (%s), continuing with the default range shown in the UI.", exc)
+
+    log.info("Generating statement...")
+    generate_btn = wait_for_element(
+        driver,
+        By.XPATH,
+        "//button[span[contains(text(),'Generate') or contains(text(),'Vygenerovat')]]",
+        timeout=10,
+        description="Generate button",
+    )
+    before_files = set(glob.glob(os.path.join(download_dir, "*")))
+    generate_btn.click()
+    log.info("Statement generation triggered.")
+    time.sleep(2)
+    snapshot(driver, f"after_generate_click_{currency}")
+
+    # Some accounts auto-download immediately; others show a "Statement is ready" sheet with
+    # its own explicit Download button that must be clicked.
+    try:
+        ready_download_btn = wait_for_element(
+            driver,
+            By.XPATH,
+            "//span[contains(text(),'Statement is ready')]/following::button[.//span[contains(text(),'Download')]][1]",
+            timeout=5,
+            description="'Statement is ready' Download button",
+        )
+        ready_download_btn.click()
+        log.info("Clicked Download on the 'Statement is ready' sheet.")
+        time.sleep(1)
+    except RevolutDownloadError:
+        pass
+
+    log.info("Waiting for download to complete...")
+    downloaded = wait_for_new_file(download_dir, before_files, timeout=60)
+
+    close_statement_dialog(driver)
+
+    if not downloaded:
+        snapshot(driver, f"download_timeout_{currency}")
+        log.error("No new file appeared in %s within timeout.", download_dir)
+        return None
+
+    ext = os.path.splitext(downloaded)[1]
+    name_parts = ["revolut"]
+    if currency:
+        name_parts.append(currency)
+    name_parts.append(f"{month_from}_{month_to}")
+    renamed = os.path.join(download_dir, "-".join(name_parts) + ext)
+    shutil.move(downloaded, renamed)
+    downloaded = renamed
+
+    log.info("Downloaded statement: %s", downloaded)
+    return downloaded
+
+
+def download_revolut_statements(month_from: str, month_to: str, currencies=None, download_dir: str = None):
+    """
+    Log in once (via QR code) and download one statement CSV per currency pocket.
+
+    currencies: list of currency codes to fetch (e.g. ["CZK", "EUR"]). If omitted or empty,
+    a single statement is downloaded for whatever account is active by default.
+
+    Returns a dict {currency_or_None: downloaded_file_path_or_None}.
+    """
+    download_dir = download_dir or os.getcwd()
+    os.makedirs(download_dir, exist_ok=True)
+    currencies = currencies or [None]
+
+    options = Options()
+    options.add_argument("--start-maximized")
+    options.add_experimental_option(
+        "prefs",
+        {
+            "download.default_directory": download_dir,
+            "download.prompt_for_download": False,
+        },
+    )
+
+    # Uses the system chromedriver (Debian package: chromium-driver) found on PATH by default;
+    # set REVOLUT_CHROMEDRIVER to point at a specific binary instead.
+    chromedriver_path = os.environ.get("REVOLUT_CHROMEDRIVER")
+    service = Service(executable_path=chromedriver_path) if chromedriver_path else Service()
+    driver = webdriver.Chrome(service=service, options=options)
+    results = {}
+
+    try:
+        login(driver)
+        dismiss_cookie_banner(driver)
+
+        for currency in currencies:
+            close_any_overlay(driver)
+            try:
+                if currency:
+                    select_currency_account(driver, currency)
+                results[currency] = generate_and_download_statement(driver, month_from, month_to, download_dir, currency)
+            except RevolutDownloadError as exc:
+                snapshot(driver, f"failed_{currency}")
+                log.error("Failed to download statement for %s: %s", currency or "default account", exc)
+                results[currency] = None
+
+        return results
+
+    except RevolutDownloadError as exc:
+        log.error(str(exc))
+        return results
+    except WebDriverException as exc:
+        log.error("Browser automation error: %s", exc)
+        return results
+    finally:
+        driver.quit()
+
+
+def download_revolut_statement(month_from: str, month_to: str, download_dir: str = None):
+    """Backwards-compatible single-account helper."""
+    results = download_revolut_statements(month_from, month_to, currencies=None, download_dir=download_dir)
+    return results.get(None)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Download Revolut bank statement(s) via browser automation.")
+    parser.add_argument("--month-from", default=os.environ.get("REVOLUT_MONTH_FROM"), help="Start month, e.g. 2025-10")
+    parser.add_argument("--month-to", default=os.environ.get("REVOLUT_MONTH_TO"), help="End month, e.g. 2025-10")
+    parser.add_argument("--download-dir", default=os.environ.get("REVOLUT_DOWNLOAD_DIR"), help="Download directory")
+    parser.add_argument(
+        "--currencies",
+        default=os.environ.get("REVOLUT_CURRENCIES"),
+        help="Comma-separated currency codes to download, e.g. CZK,EUR. "
+        "Omit to download a single statement for the currently active account.",
+    )
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    month_from = args.month_from or input("Zadejte počáteční měsíc (např. 2025-10): ")
+    month_to = args.month_to or input("Zadejte koncový měsíc (např. 2025-10): ")
+    download_dir = args.download_dir or (input("Zadejte adresář pro stažení (nepovinné): ") or None)
+    currencies_raw = args.currencies
+    if currencies_raw is None:
+        currencies_raw = input("Zadejte měny oddělené čárkou, např. CZK,EUR (nepovinné): ") or None
+    currencies = [c.strip() for c in currencies_raw.split(",") if c.strip()] if currencies_raw else None
+
+    results = download_revolut_statements(month_from, month_to, currencies, download_dir)
+    failures = [c for c, path in results.items() if not path]
+    for currency, path in results.items():
+        label = currency or "default"
+        log.info("%s: %s", label, path or "FAILED")
+
+    raise SystemExit(1 if failures else 0)

@@ -22,3 +22,13 @@ Section: office
 Priority: optional
 Description: Add AbraFlexi contracts to invoice generator to MultiFlexi
  Easy way how to generate your invoices every day
+
+Package: abraflexi-revolut-statement-downloader
+Depends: ${misc:Depends}, python3, python3-selenium, chromium-driver
+Architecture: all
+Section: office
+Priority: optional
+Description: Browser-automated Revolut bank statement downloader
+ Logs into Revolut via its QR-code login flow and downloads bank
+ statement CSVs (one per currency pocket for multi-currency accounts),
+ ready to feed into abraflexi-revolut-csv-import.
