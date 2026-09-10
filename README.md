@@ -13,6 +13,8 @@ Import Revolut bank statements (CSV format) into AbraFlexi accounting system.
 
 - **CSV Import**: Import Revolut bank statements from CSV files
 - **AbraFlexi Integration**: Direct integration with AbraFlexi accounting system
+- **Automated Statement Download**: Optional browser-automated downloader logs into Revolut via QR code and fetches CSV statements for you — see [Automated Statement Download](#automated-statement-download)
+- **Multi-currency**: Handles accounts with several currency pockets (e.g. CZK + EUR), one CSV per currency
 - **MultiFlexi Compatible**: Ready to run as a MultiFlexi application
 - **Docker Support**: Available as Docker container
 - **Automated Setup**: Includes setup script for easy configuration
@@ -85,6 +87,10 @@ sudo apt update
 
 # Install the package
 sudo apt install abraflexi-revolut
+
+# Optional: browser-automated statement downloader (see "Automated Statement
+# Download" below) - a separate package built from this same source
+sudo apt install abraflexi-revolut-statement-downloader
 ```
 
 ### Composer Installation
@@ -169,14 +175,47 @@ Both English and Czech Revolut CSV exports are supported.
 
 #### Supported Transaction Types
 
+Both `SCREAMING_SNAKE_CASE` (older CSV exports) and `Title Case` (current Revolut
+exports) forms of the English type are recognized.
+
 | English | Czech | Direction |
 |---------|-------|-----------|
-| TOPUP | Dobíjení | Income |
-| CARD_PAYMENT | Platba kartou | Expense |
+| TOPUP / Topup | Dobíjení | Income |
+| DEPOSIT / Deposit | Vklad | Income |
+| REVERTED | — | Income |
+| CARD_PAYMENT / Card Payment | Platba kartou | Expense |
 | FEE | Poplatek | Expense |
-| TRANSFER | Převod | Depends on amount sign |
+| TRANSFER / Transfer / Rev Payment | Převod | Depends on amount sign |
 | CARD_REFUND | Vrácení peněz na kartu | Skipped |
 | TEMP_BLOCK | — | Skipped |
+
+Any other transaction type is logged as a warning and skipped — check the import
+output if a transaction seems to be missing (this is exactly how a real gap was
+found and fixed: `Deposit` rows, e.g. incoming bank transfers, were silently
+skipped before the mapping above was added).
+
+## Automated Statement Download
+
+Downloading the CSV statement from Revolut by hand is optional — the
+[`revolut_automation/`](revolut_automation/) tool automates it with a browser:
+it logs into Revolut using the QR-code login flow (scan with your phone, no
+password/PIN typed by the script), navigates to the Statement export, and
+downloads one CSV per currency for accounts with more than one currency pocket
+(e.g. CZK + EUR), ready to feed straight into `abraflexi-revolut-csv-import`.
+
+```shell
+# Debian/Ubuntu package (installed above)
+revolut-statement-downloader --month-from 2025-10 --month-to 2025-10 \
+  --download-dir /path/to/downloads --currencies CZK,EUR
+```
+
+It auto-detects whichever browser driver is installed — Firefox (`geckodriver`,
+Debian package `gecko-driver`) is preferred when present, falling back to
+Chrome/Chromium (`chromedriver`, package `chromium-driver`). See
+[`revolut_automation/README.md`](revolut_automation/README.md) for full usage,
+environment variables, and troubleshooting notes (Revolut's login/statement
+pages change from time to time; that file documents the current selectors and
+how to diagnose a broken step).
 
 ## MultiFlexi Integration
 
@@ -202,8 +241,8 @@ See the full list of ready-to-run applications within the MultiFlexi platform on
 
 This project uses the following main dependencies:
 
-- **spojenet/flexibee** (^2025.7): AbraFlexi PHP library
-- **vitexsoftware/ease-core** (^1.48): Core functionality and utilities
+- **spojenet/flexibee** (^3.7): AbraFlexi PHP library
+- **vitexsoftware/ease-core** (^1.50): Core functionality and utilities
 
 ### Development Tools
 

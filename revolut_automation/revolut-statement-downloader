@@ -8,10 +8,12 @@ import time
 
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -36,6 +38,61 @@ log = logging.getLogger("revolut_statement_downloader")
 
 class RevolutDownloadError(RuntimeError):
     """Raised when a required page step could not be completed."""
+
+
+def create_driver(download_dir):
+    """
+    Build a Selenium WebDriver, auto-detecting whichever browser driver is installed on this
+    system: geckodriver (Firefox, package: gecko-driver) is preferred when present, falling
+    back to chromedriver (Chrome/Chromium, package: chromium-driver). Override the choice with
+    REVOLUT_GECKODRIVER / REVOLUT_CHROMEDRIVER (either selects that browser explicitly) or by
+    setting REVOLUT_BROWSER=firefox|chrome.
+
+    Selenium's DriverFinder only skips its (upstream-bundled, not Debian-packaged)
+    selenium-manager binary when Service.path is explicitly set - an empty Service() tries to
+    invoke it even if a driver is already on PATH, and fails on Debian where that binary isn't
+    shipped. Always resolve a concrete path ourselves.
+    """
+    geckodriver_path = os.environ.get("REVOLUT_GECKODRIVER") or shutil.which("geckodriver")
+    chromedriver_path = os.environ.get("REVOLUT_CHROMEDRIVER") or shutil.which("chromedriver")
+    browser = os.environ.get("REVOLUT_BROWSER", "").strip().lower()
+
+    use_firefox = bool(geckodriver_path) and browser != "chrome"
+    use_chrome = bool(chromedriver_path) and (browser == "chrome" or not use_firefox)
+
+    if use_firefox:
+        log.info("Using Firefox (geckodriver: %s)", geckodriver_path)
+        options = FirefoxOptions()
+        options.add_argument("-width=1600")
+        options.add_argument("-height=1000")
+        options.set_preference("browser.download.folderList", 2)
+        options.set_preference("browser.download.dir", download_dir)
+        options.set_preference("browser.download.useDownloadDir", True)
+        options.set_preference(
+            "browser.helperApps.neverAsk.saveToDisk", "text/csv,application/csv,application/octet-stream"
+        )
+        options.set_preference("browser.download.manager.showWhenStarting", False)
+        service = FirefoxService(executable_path=geckodriver_path)
+        return webdriver.Firefox(service=service, options=options)
+
+    if use_chrome:
+        log.info("Using Chrome (chromedriver: %s)", chromedriver_path)
+        options = ChromeOptions()
+        options.add_argument("--start-maximized")
+        options.add_experimental_option(
+            "prefs",
+            {
+                "download.default_directory": download_dir,
+                "download.prompt_for_download": False,
+            },
+        )
+        service = ChromeService(executable_path=chromedriver_path)
+        return webdriver.Chrome(service=service, options=options)
+
+    raise RevolutDownloadError(
+        "Neither geckodriver nor chromedriver found on PATH; install the gecko-driver or "
+        "chromium-driver package, or point REVOLUT_GECKODRIVER/REVOLUT_CHROMEDRIVER at one."
+    )
 
 
 def wait_for_element(driver, by, value, timeout=60, description=None):
@@ -116,7 +173,7 @@ def wait_for_new_file(download_dir, before_files, timeout=60):
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         current_files = set(glob.glob(os.path.join(download_dir, "*")))
-        new_files = [f for f in current_files - before_files if not f.endswith(".crdownload")]
+        new_files = [f for f in current_files - before_files if not f.endswith((".crdownload", ".part"))]
         if new_files:
             return new_files[0]
         time.sleep(1)
@@ -189,19 +246,37 @@ def login(driver, confirm_timeout=180):
     app.revolut.com/login), a QR code is shown immediately on load - no PIN or password step
     is involved. The QR code expires after a short idle period; this refreshes it automatically
     while waiting for the phone to confirm.
+
+    Revolut can also silently re-authenticate an already-trusted browser/device and redirect
+    straight to /home without ever showing a QR code (seen when the same machine logged in
+    recently) - this is detected and treated as an immediate success rather than a timeout.
     """
     driver.get(REVOLUT_APP_URL)
 
-    log.info("Waiting for login QR code to appear...")
+    log.info("Waiting for login QR code (or a silent already-authenticated redirect)...")
     # Note: svg elements live in the SVG XML namespace, so plain XPath tag matching (//svg)
-    # silently matches nothing in Chrome - use a CSS selector instead.
-    wait_for_element(
-        driver,
+    # silently matches nothing via plain XPath tag names - use a CSS selector instead.
+    # The QR svg's CSS class is a non-deterministic build hash (not a stable "QrCode"-ish
+    # name), so match on its aria-label instead, which carries the actual challenge URL.
+    qr_selector = (
         By.CSS_SELECTOR,
-        "svg[class*='QrCode'], img[src*='qr' i], img[alt*='QR' i]",
-        description="login QR code",
+        "svg[aria-label*='challenges/qr'], img[src*='qr' i], img[alt*='QR' i]",
     )
-    log.info("QR code displayed. Please scan it with your Revolut mobile app and confirm login on your phone.")
+    deadline = time.monotonic() + 60
+    qr_shown = False
+    while time.monotonic() < deadline:
+        if "/home" in driver.current_url:
+            log.info("Already authenticated - no QR scan needed.")
+            return
+        if driver.find_elements(*qr_selector):
+            qr_shown = True
+            break
+        time.sleep(1)
+    else:
+        raise RevolutDownloadError("Timed out waiting for login QR code or an authenticated redirect")
+
+    if qr_shown:
+        log.info("QR code displayed. Please scan it with your Revolut mobile app and confirm login on your phone.")
 
     deadline = time.monotonic() + confirm_timeout
     while time.monotonic() < deadline:
@@ -371,21 +446,7 @@ def download_revolut_statements(month_from: str, month_to: str, currencies=None,
     os.makedirs(download_dir, exist_ok=True)
     currencies = currencies or [None]
 
-    options = Options()
-    options.add_argument("--start-maximized")
-    options.add_experimental_option(
-        "prefs",
-        {
-            "download.default_directory": download_dir,
-            "download.prompt_for_download": False,
-        },
-    )
-
-    # Uses the system chromedriver (Debian package: chromium-driver) found on PATH by default;
-    # set REVOLUT_CHROMEDRIVER to point at a specific binary instead.
-    chromedriver_path = os.environ.get("REVOLUT_CHROMEDRIVER")
-    service = Service(executable_path=chromedriver_path) if chromedriver_path else Service()
-    driver = webdriver.Chrome(service=service, options=options)
+    driver = create_driver(download_dir)
     results = {}
 
     try:

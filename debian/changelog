@@ -1,3 +1,22 @@
+abraflexi-revolut (1.2.1) unstable; urgency=medium
+
+  * Fix RevolutCsvHelper: "Deposit"/"Vklad" transactions (e.g. incoming
+    bank transfers) were silently skipped as an unrecognized type
+    instead of being imported as income.
+  * revolut-statement-downloader: support both Firefox (geckodriver)
+    and Chrome/Chromium (chromedriver), auto-detecting whichever is
+    installed and preferring geckodriver.
+  * revolut-statement-downloader: recognize Revolut silently
+    re-authenticating an already-trusted browser (redirecting straight
+    to /home without showing a QR code) instead of timing out, and
+    stop matching the login QR code by its non-deterministic CSS
+    class, which had started breaking on every page load.
+  * debian/control: the abraflexi-revolut-statement-downloader package
+    now depends on "gecko-driver | chromium-driver" instead of
+    requiring chromium-driver specifically.
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Thu, 10 Sep 2026 13:10:24 +0200
+
 abraflexi-revolut (1.2.0) unstable; urgency=medium
 
   * Add abraflexi-revolut-statement-downloader package: browser-

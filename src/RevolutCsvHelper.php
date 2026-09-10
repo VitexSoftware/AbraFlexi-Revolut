@@ -53,8 +53,11 @@ class RevolutCsvHelper
         switch ($type) {
             case 'TOPUP':
             case 'REVERTED':
+            case 'DEPOSIT':
             case 'Dobíjení':
             case 'Topup':
+            case 'Deposit':
+            case 'Vklad':
                 return 'typPohybu.prijem';
             case 'FEE':
             case 'CARD_PAYMENT':

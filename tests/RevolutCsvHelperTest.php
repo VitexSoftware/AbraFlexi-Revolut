@@ -58,6 +58,16 @@ class RevolutCsvHelperTest extends TestCase
         $this->assertSame('typPohybu.prijem', RevolutCsvHelper::resolveMovementType('TOPUP', 100.0));
     }
 
+    public function testResolveMovementTypeDeposit(): void
+    {
+        $this->assertSame('typPohybu.prijem', RevolutCsvHelper::resolveMovementType('Deposit', 184.02));
+    }
+
+    public function testResolveMovementTypeVklad(): void
+    {
+        $this->assertSame('typPohybu.prijem', RevolutCsvHelper::resolveMovementType('Vklad', 184.02));
+    }
+
     public function testResolveMovementTypeCardPayment(): void
     {
         $this->assertSame('typPohybu.vydej', RevolutCsvHelper::resolveMovementType('CARD_PAYMENT', -50.0));
