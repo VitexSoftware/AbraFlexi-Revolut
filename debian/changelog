@@ -14,6 +14,8 @@ abraflexi-revolut (1.2.1) unstable; urgency=medium
   * debian/control: the abraflexi-revolut-statement-downloader package
     now depends on "gecko-driver | chromium-driver" instead of
     requiring chromium-driver specifically.
+  * debian/README.Debian: fix the documented autoloader path, which
+    pointed at a location the package never actually installs to.
 
  -- Vítězslav Dvořák <info@vitexsoftware.cz>  Thu, 10 Sep 2026 13:10:24 +0200
 
