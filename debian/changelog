@@ -1,3 +1,14 @@
+abraflexi-revolut (1.2.2) unstable; urgency=medium
+
+  * Makefile: add download-statements target for Revolut web CSV
+    download from a checkout.
+  * revolut-statement-downloader: resolve download-dir to an absolute
+    path so Firefox/Chrome no longer ignore it and save to ~/Downloads.
+  * revolut-statement-downloader: JS click fallback and overlay dismiss
+    so cookie consent and Generate are not blocked by OverlayBase.
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Fri, 18 Sep 2026 20:49:11 +0200
+
 abraflexi-revolut (1.2.1) unstable; urgency=medium
 
   * Fix RevolutCsvHelper: "Deposit"/"Vklad" transactions (e.g. incoming
