@@ -68,6 +68,17 @@ There is no automated test coverage for `revolut_automation/` — it drives a re
 browser against Revolut's live site, so changes there need a manual live run to
 verify (see "Revolut UI changes" below).
 
+### Download statements (manual live run)
+
+```bash
+make download-statements MONTH_FROM=2026-09 MONTH_TO=2026-10 CURRENCIES=CZK,EUR
+# optional: DOWNLOAD_DIR=...  (default: downloads/)
+```
+
+Requires `python3-selenium` and `gecko-driver` or `chromium-driver`. QR login
+still needs a human with the Revolut phone app. CSVs land under `DOWNLOAD_DIR`
+as `revolut-<CCY>-<from>_<to>.csv`.
+
 ### Build packages
 
 ```bash
@@ -123,6 +134,13 @@ failure modes already hit and fixed once (may recur in a different form):
 - Revolut can silently re-authenticate an already-trusted browser straight to
   `/home`, skipping the QR screen entirely — treat that as success, not a timeout.
 - A cookie-consent banner intercepts clicks until dismissed.
+- An `OverlayBase` often sits on top of cookie/Generate buttons after login or
+  after the month picker — native Selenium clicks fail with
+  `ElementClickInterceptedError`; use a JS click fallback (`safe_click`) and
+  dismiss leftover overlays before Generate.
+- Firefox/Chrome ignore a *relative* `--download-dir` and save to `~/Downloads`
+  instead — always resolve the download directory to an absolute path before
+  configuring the browser, or `wait_for_new_file` hangs forever.
 - The account switcher lists currency pockets by **name** ("Euro", "Czech
   koruna"), not by ISO code.
 - The statement date picker is a month/year grid (`aria-label="September 2025"`

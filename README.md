@@ -203,9 +203,16 @@ password/PIN typed by the script), navigates to the Statement export, and
 downloads one CSV per currency for accounts with more than one currency pocket
 (e.g. CZK + EUR), ready to feed straight into `abraflexi-revolut-csv-import`.
 
+From a git checkout (defaults to `./downloads`):
+
 ```shell
-# Debian/Ubuntu package (installed above)
-revolut-statement-downloader --month-from 2025-10 --month-to 2025-10 \
+make download-statements MONTH_FROM=2026-09 MONTH_TO=2026-10 CURRENCIES=CZK,EUR
+```
+
+Or via the Debian/Ubuntu package:
+
+```shell
+revolut-statement-downloader --month-from 2026-09 --month-to 2026-10 \
   --download-dir /path/to/downloads --currencies CZK,EUR
 ```
 

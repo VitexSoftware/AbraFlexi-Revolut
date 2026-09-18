@@ -31,3 +31,17 @@ buildx:
 
 drun:
 	docker run  -f Containerfile --env-file .env vitexsoftware/abraflexi-revolut:latest
+
+# Optional overrides: MONTH_FROM=YYYY-MM MONTH_TO=YYYY-MM DOWNLOAD_DIR=path CURRENCIES=CZK,EUR
+MONTH_FROM ?=
+MONTH_TO ?=
+DOWNLOAD_DIR ?= downloads
+CURRENCIES ?=
+
+.PHONY: download-statements
+download-statements: ## Download bank statements from Revolut web (QR login)
+	python3 revolut_automation/revolut-statement-downloader \
+		$(if $(MONTH_FROM),--month-from $(MONTH_FROM)) \
+		$(if $(MONTH_TO),--month-to $(MONTH_TO)) \
+		--download-dir $(DOWNLOAD_DIR) \
+		$(if $(CURRENCIES),--currencies $(CURRENCIES))

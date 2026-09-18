@@ -60,6 +60,11 @@ def create_driver(download_dir):
     use_firefox = bool(geckodriver_path) and browser != "chrome"
     use_chrome = bool(chromedriver_path) and (browser == "chrome" or not use_firefox)
 
+    # Firefox/Chrome ignore relative download dirs and fall back to ~/Downloads,
+    # which makes wait_for_new_file hang forever watching the wrong folder.
+    download_dir = os.path.abspath(download_dir)
+    log.info("Browser downloads will go to %s", download_dir)
+
     if use_firefox:
         log.info("Using Firefox (geckodriver: %s)", geckodriver_path)
         options = FirefoxOptions()
@@ -68,10 +73,17 @@ def create_driver(download_dir):
         options.set_preference("browser.download.folderList", 2)
         options.set_preference("browser.download.dir", download_dir)
         options.set_preference("browser.download.useDownloadDir", True)
-        options.set_preference(
-            "browser.helperApps.neverAsk.saveToDisk", "text/csv,application/csv,application/octet-stream"
-        )
         options.set_preference("browser.download.manager.showWhenStarting", False)
+        options.set_preference("browser.download.alwaysOpenPanel", False)
+        options.set_preference("browser.download.always_ask_before_handling_new_types", False)
+        options.set_preference(
+            "browser.helperApps.neverAsk.saveToDisk",
+            "text/csv,application/csv,text/comma-separated-values,application/octet-stream",
+        )
+        options.set_preference(
+            "browser.helperApps.neverAsk.openFile",
+            "text/csv,application/csv,text/comma-separated-values,application/octet-stream",
+        )
         service = FirefoxService(executable_path=geckodriver_path)
         return webdriver.Firefox(service=service, options=options)
 
@@ -84,6 +96,8 @@ def create_driver(download_dir):
             {
                 "download.default_directory": download_dir,
                 "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True,
             },
         )
         service = ChromeService(executable_path=chromedriver_path)
@@ -130,6 +144,15 @@ def close_any_overlay(driver):
         pass
 
 
+def safe_click(driver, element):
+    """Click an element, falling back to JS when a Revolut overlay intercepts the native click."""
+    try:
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+        element.click()
+    except WebDriverException:
+        driver.execute_script("arguments[0].click();", element)
+
+
 def close_statement_dialog(driver):
     """Explicitly close the Statement modal via its Close button, so it doesn't linger and
     intercept clicks (e.g. the account switcher) for the next currency.
@@ -142,7 +165,7 @@ def close_statement_dialog(driver):
     try:
         close_btns = driver.find_elements(By.XPATH, "//button[.//div[contains(text(),'Close')]]")
         if close_btns:
-            close_btns[-1].click()
+            safe_click(driver, close_btns[-1])
             time.sleep(1)
     except Exception:
         pass
@@ -152,20 +175,27 @@ def dismiss_cookie_banner(driver):
     """
     Dismiss Revolut's cookie-consent banner, which otherwise sits on top of the page and
     intercepts clicks on the Statement/account-switcher buttons behind it.
+
+    After login Revolut often shows another OverlayBase on top of the cookie sheet, so a
+    native Selenium click can fail with ElementClickInterceptedError — fall back to JS click.
     """
     try:
         reject_btn = wait_for_element(
             driver,
             By.XPATH,
-            "//button[.//span[contains(text(),'Reject all cookies')]]",
+            "//button[.//span[contains(text(),'Reject all cookies') "
+            "or contains(text(),'Reject all') "
+            "or contains(text(),'Odmítnout')]]",
             timeout=10,
             description="cookie consent banner",
         )
-        reject_btn.click()
+        safe_click(driver, reject_btn)
         time.sleep(1)
         log.info("Dismissed cookie consent banner.")
     except RevolutDownloadError:
         log.info("No cookie consent banner found (already dismissed or not shown).")
+    except WebDriverException as exc:
+        log.warning("Could not dismiss cookie consent banner: %s", exc)
 
 
 def wait_for_new_file(download_dir, before_files, timeout=60):
@@ -196,7 +226,7 @@ def select_statement_month(driver, field_label: str, year: int, month: int):
         timeout=10,
         description=f"'{field_label}' field",
     )
-    field_input.click()
+    safe_click(driver, field_input)
     time.sleep(1)
 
     target_month_name = MONTH_NAMES[month - 1]
@@ -222,7 +252,7 @@ def select_statement_month(driver, field_label: str, year: int, month: int):
             timeout=10,
             description=f"'{direction}' year button",
         )
-        nav_btn.click()
+        safe_click(driver, nav_btn)
         time.sleep(0.3)
     else:
         raise RevolutDownloadError(f"Could not navigate date picker to year {year}")
@@ -234,7 +264,7 @@ def select_statement_month(driver, field_label: str, year: int, month: int):
         timeout=10,
         description=f"{target_month_name} {year} month cell",
     )
-    month_cell.click()
+    safe_click(driver, month_cell)
     time.sleep(1)
 
 
@@ -289,7 +319,7 @@ def login(driver, confirm_timeout=180):
                 By.XPATH, "//button[contains(text(),'Refresh') or contains(text(),'Obnovit')]"
             )
             log.info("QR code expired, refreshing...")
-            refresh_btn.click()
+            safe_click(driver, refresh_btn)
         except Exception:
             pass
 
@@ -316,7 +346,7 @@ def select_currency_account(driver, currency: str):
             timeout=10,
             description="account switcher",
         )
-        switcher.click()
+        safe_click(driver, switcher)
         time.sleep(1)
         snapshot(driver, f"after_switcher_click_{currency}")
 
@@ -328,7 +358,7 @@ def select_currency_account(driver, currency: str):
             timeout=10,
             description=f"{currency} ({currency_name}) account entry",
         )
-        account_entry.click()
+        safe_click(driver, account_entry)
         time.sleep(1)
         return True
     except RevolutDownloadError:
@@ -350,7 +380,7 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
         "//span[contains(text(),'Statement') or contains(text(),'Výpis')]",
         description="Statement button",
     )
-    statement_btn.click()
+    safe_click(driver, statement_btn)
     time.sleep(3)
     snapshot(driver, f"after_statement_click_{currency}")
 
@@ -364,7 +394,7 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
             timeout=10,
             description="CSV/Excel export tab",
         )
-        excel_btn.click()
+        safe_click(driver, excel_btn)
         time.sleep(1)
         snapshot(driver, f"after_csv_click_{currency}")
     except RevolutDownloadError:
@@ -380,6 +410,9 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
     except RevolutDownloadError as exc:
         log.warning("Could not set date range (%s), continuing with the default range shown in the UI.", exc)
 
+    # Date pickers leave an OverlayBase behind that intercepts the Generate click.
+    close_any_overlay(driver)
+
     log.info("Generating statement...")
     generate_btn = wait_for_element(
         driver,
@@ -389,7 +422,7 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
         description="Generate button",
     )
     before_files = set(glob.glob(os.path.join(download_dir, "*")))
-    generate_btn.click()
+    safe_click(driver, generate_btn)
     log.info("Statement generation triggered.")
     time.sleep(2)
     snapshot(driver, f"after_generate_click_{currency}")
@@ -404,7 +437,7 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
             timeout=5,
             description="'Statement is ready' Download button",
         )
-        ready_download_btn.click()
+        safe_click(driver, ready_download_btn)
         log.info("Clicked Download on the 'Statement is ready' sheet.")
         time.sleep(1)
     except RevolutDownloadError:
@@ -442,7 +475,7 @@ def download_revolut_statements(month_from: str, month_to: str, currencies=None,
 
     Returns a dict {currency_or_None: downloaded_file_path_or_None}.
     """
-    download_dir = download_dir or os.getcwd()
+    download_dir = os.path.abspath(download_dir or os.getcwd())
     os.makedirs(download_dir, exist_ok=True)
     currencies = currencies or [None]
 
@@ -473,7 +506,10 @@ def download_revolut_statements(month_from: str, month_to: str, currencies=None,
         log.error("Browser automation error: %s", exc)
         return results
     finally:
-        driver.quit()
+        try:
+            driver.quit()
+        except Exception:
+            pass
 
 
 def download_revolut_statement(month_from: str, month_to: str, download_dir: str = None):

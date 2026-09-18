@@ -21,3 +21,4 @@
 /.phpunit.cache/
 __pycache__/
 /revolut_automation/.venv/
+/downloads/
