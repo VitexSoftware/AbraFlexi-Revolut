@@ -1,3 +1,14 @@
+abraflexi-revolut (1.2.3) unstable; urgency=medium
+
+  * revolut-statement-downloader: stop sending Escape after the month
+    picker (it closed the Statement dialog and made Generate vanish).
+  * revolut-statement-downloader: find Generate via nested span/div
+    labels, matching Revolut's current button markup.
+  * revolut-statement-downloader: wait up to 10 minutes for QR login
+    confirmation (--login-timeout / LOGIN_TIMEOUT).
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Sat, 03 Oct 2026 10:54:37 +0200
+
 abraflexi-revolut (1.2.2) unstable; urgency=medium
 
   * Makefile: add download-statements target for Revolut web CSV
