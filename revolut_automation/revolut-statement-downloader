@@ -136,12 +136,33 @@ def snapshot(driver, name):
 
 
 def close_any_overlay(driver):
-    """Best-effort dismiss of any leftover modal/overlay before starting the next currency."""
+    """Best-effort dismiss of leftover modals between currency runs (Escape is OK here —
+    the Statement dialog should already be closed). Do NOT call this while the Statement
+    form is open: Escape closes that dialog too, which then makes Generate disappear.
+    """
     try:
         driver.find_element(By.TAG_NAME, "body").send_keys(Keys.ESCAPE)
         time.sleep(1)
     except Exception:
         pass
+
+
+def dismiss_transient_overlay(driver):
+    """Wait briefly for a leftover OverlayBase after the month picker closes.
+
+    Unlike close_any_overlay(), this never sends Escape — that key closes the Statement
+    dialog itself. Click interception is handled by safe_click()'s JS fallback.
+    """
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        overlays = driver.find_elements(
+            By.CSS_SELECTOR,
+            "[class*='OverlayBase'], [class*='Overlay'], [data-testid*='overlay']",
+        )
+        visible = [o for o in overlays if o.is_displayed()]
+        if not visible:
+            return
+        time.sleep(0.3)
 
 
 def safe_click(driver, element):
@@ -151,6 +172,40 @@ def safe_click(driver, element):
         element.click()
     except WebDriverException:
         driver.execute_script("arguments[0].click();", element)
+
+
+def find_button_by_labels(driver, labels, timeout=15, description=None):
+    """
+    Find a Revolut action button whose label matches any of the given strings.
+
+    Revolut buttons put the visible label in a nested span or a visually-hidden div
+    (Close / Previous / Next use div; some CTAs still use span). Prefer a nested
+    match, then fall back to concatenated button text.
+    """
+    label_preds = " or ".join(f"contains(text(),'{label}')" for label in labels)
+    text_preds = " or ".join(f"contains(normalize-space(.), '{label}')" for label in labels)
+    xpaths = [
+        f"//button[.//span[{label_preds}]]",
+        f"//button[.//div[{label_preds}]]",
+        f"//button[{text_preds}]",
+    ]
+    deadline = time.monotonic() + timeout
+    last_error = None
+    while time.monotonic() < deadline:
+        for xpath in xpaths:
+            try:
+                elements = [
+                    el for el in driver.find_elements(By.XPATH, xpath)
+                    if el.is_displayed()
+                ]
+                if elements:
+                    return elements[-1]
+            except WebDriverException as exc:
+                last_error = exc
+        time.sleep(0.3)
+    raise RevolutDownloadError(
+        f"Timed out after {timeout}s waiting for {description or ' / '.join(labels)}"
+    ) from last_error
 
 
 def close_statement_dialog(driver):
@@ -268,7 +323,7 @@ def select_statement_month(driver, field_label: str, year: int, month: int):
     time.sleep(1)
 
 
-def login(driver, confirm_timeout=180):
+def login(driver, confirm_timeout=600):
     """
     Log in via Revolut's QR-code flow and wait for the mobile-confirmed redirect home.
 
@@ -280,6 +335,8 @@ def login(driver, confirm_timeout=180):
     Revolut can also silently re-authenticate an already-trusted browser/device and redirect
     straight to /home without ever showing a QR code (seen when the same machine logged in
     recently) - this is detected and treated as an immediate success rather than a timeout.
+
+    confirm_timeout defaults to 600s (10 minutes) so a slow phone confirm is not a race.
     """
     driver.get(REVOLUT_APP_URL)
 
@@ -306,9 +363,14 @@ def login(driver, confirm_timeout=180):
         raise RevolutDownloadError("Timed out waiting for login QR code or an authenticated redirect")
 
     if qr_shown:
-        log.info("QR code displayed. Please scan it with your Revolut mobile app and confirm login on your phone.")
+        log.info(
+            "QR code displayed. Please scan it with your Revolut mobile app and confirm login "
+            "on your phone (waiting up to %ds)...",
+            confirm_timeout,
+        )
 
     deadline = time.monotonic() + confirm_timeout
+    last_reminder = 0
     while time.monotonic() < deadline:
         if "/home" in driver.current_url:
             log.info("Login confirmed!")
@@ -322,6 +384,12 @@ def login(driver, confirm_timeout=180):
             safe_click(driver, refresh_btn)
         except Exception:
             pass
+
+        elapsed = int(confirm_timeout - (deadline - time.monotonic()))
+        if elapsed - last_reminder >= 60:
+            remaining = max(0, int(deadline - time.monotonic()))
+            log.info("Still waiting for QR confirmation (%ds remaining)...", remaining)
+            last_reminder = elapsed
 
         time.sleep(2)
 
@@ -410,15 +478,17 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
     except RevolutDownloadError as exc:
         log.warning("Could not set date range (%s), continuing with the default range shown in the UI.", exc)
 
-    # Date pickers leave an OverlayBase behind that intercepts the Generate click.
-    close_any_overlay(driver)
+    # Month pickers can leave a transient OverlayBase over the form. Wait for it to
+    # clear — do NOT send Escape here, that closes the whole Statement dialog and
+    # makes the Generate button vanish (which looks like a selector timeout).
+    dismiss_transient_overlay(driver)
+    snapshot(driver, f"before_generate_{currency}")
 
     log.info("Generating statement...")
-    generate_btn = wait_for_element(
+    generate_btn = find_button_by_labels(
         driver,
-        By.XPATH,
-        "//button[span[contains(text(),'Generate') or contains(text(),'Vygenerovat')]]",
-        timeout=10,
+        ["Generate", "Vygenerovat"],
+        timeout=15,
         description="Generate button",
     )
     before_files = set(glob.glob(os.path.join(download_dir, "*")))
@@ -433,7 +503,11 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
         ready_download_btn = wait_for_element(
             driver,
             By.XPATH,
-            "//span[contains(text(),'Statement is ready')]/following::button[.//span[contains(text(),'Download')]][1]",
+            "//*[contains(text(),'Statement is ready') or contains(text(),'Výpis je připraven')]"
+            "/following::button["
+            ".//span[contains(text(),'Download') or contains(text(),'Stáhnout')] "
+            "or .//div[contains(text(),'Download') or contains(text(),'Stáhnout')]"
+            "][1]",
             timeout=5,
             description="'Statement is ready' Download button",
         )
@@ -466,7 +540,13 @@ def generate_and_download_statement(driver, month_from: str, month_to: str, down
     return downloaded
 
 
-def download_revolut_statements(month_from: str, month_to: str, currencies=None, download_dir: str = None):
+def download_revolut_statements(
+    month_from: str,
+    month_to: str,
+    currencies=None,
+    download_dir: str = None,
+    login_timeout: int = 600,
+):
     """
     Log in once (via QR code) and download one statement CSV per currency pocket.
 
@@ -483,7 +563,7 @@ def download_revolut_statements(month_from: str, month_to: str, currencies=None,
     results = {}
 
     try:
-        login(driver)
+        login(driver, confirm_timeout=login_timeout)
         dismiss_cookie_banner(driver)
 
         for currency in currencies:
@@ -529,6 +609,12 @@ def parse_args():
         help="Comma-separated currency codes to download, e.g. CZK,EUR. "
         "Omit to download a single statement for the currently active account.",
     )
+    parser.add_argument(
+        "--login-timeout",
+        type=int,
+        default=int(os.environ.get("REVOLUT_LOGIN_TIMEOUT", "600")),
+        help="Seconds to wait for QR login confirmation (default: 600).",
+    )
     return parser.parse_args()
 
 
@@ -542,7 +628,9 @@ if __name__ == "__main__":
         currencies_raw = input("Zadejte měny oddělené čárkou, např. CZK,EUR (nepovinné): ") or None
     currencies = [c.strip() for c in currencies_raw.split(",") if c.strip()] if currencies_raw else None
 
-    results = download_revolut_statements(month_from, month_to, currencies, download_dir)
+    results = download_revolut_statements(
+        month_from, month_to, currencies, download_dir, login_timeout=args.login_timeout
+    )
     failures = [c for c, path in results.items() if not path]
     for currency, path in results.items():
         label = currency or "default"

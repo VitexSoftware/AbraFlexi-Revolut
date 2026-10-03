@@ -136,8 +136,11 @@ failure modes already hit and fixed once (may recur in a different form):
 - A cookie-consent banner intercepts clicks until dismissed.
 - An `OverlayBase` often sits on top of cookie/Generate buttons after login or
   after the month picker — native Selenium clicks fail with
-  `ElementClickInterceptedError`; use a JS click fallback (`safe_click`) and
-  dismiss leftover overlays before Generate.
+  `ElementClickInterceptedError`; use a JS click fallback (`safe_click`). Wait
+  for transient overlays to clear, but never send Escape while the Statement
+  dialog is open — Escape closes that dialog and the Generate button vanishes
+  (looks like a selector timeout). Generate labels may live in a nested
+  `span` or visually-hidden `div`; match either.
 - Firefox/Chrome ignore a *relative* `--download-dir` and save to `~/Downloads`
   instead — always resolve the download directory to an absolute path before
   configuring the browser, or `wait_for_new_file` hangs forever.

@@ -32,11 +32,12 @@ buildx:
 drun:
 	docker run  -f Containerfile --env-file .env vitexsoftware/abraflexi-revolut:latest
 
-# Optional overrides: MONTH_FROM=YYYY-MM MONTH_TO=YYYY-MM DOWNLOAD_DIR=path CURRENCIES=CZK,EUR
+# Optional overrides: MONTH_FROM=YYYY-MM MONTH_TO=YYYY-MM DOWNLOAD_DIR=path CURRENCIES=CZK,EUR LOGIN_TIMEOUT=600
 MONTH_FROM ?=
 MONTH_TO ?=
 DOWNLOAD_DIR ?= downloads
 CURRENCIES ?=
+LOGIN_TIMEOUT ?= 600
 
 .PHONY: download-statements
 download-statements: ## Download bank statements from Revolut web (QR login)
@@ -44,4 +45,5 @@ download-statements: ## Download bank statements from Revolut web (QR login)
 		$(if $(MONTH_FROM),--month-from $(MONTH_FROM)) \
 		$(if $(MONTH_TO),--month-to $(MONTH_TO)) \
 		--download-dir $(DOWNLOAD_DIR) \
-		$(if $(CURRENCIES),--currencies $(CURRENCIES))
+		$(if $(CURRENCIES),--currencies $(CURRENCIES)) \
+		--login-timeout $(LOGIN_TIMEOUT)
